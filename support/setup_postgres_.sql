@@ -1,4 +1,4 @@
-create database forum-server;
+create database forum_server;
 create user postgres password 'password';
-grant all priviledges on database forum-server to postgres;
-\c forum-server
+grant all privileges on database forum_server to postgres;
+\c forum_server
