@@ -13,4 +13,4 @@ tasks:
   init: >
     psql -h localhost -d postgres --file=support/setup_postgres.sql &&
     npm i
-  commnand: npm run start
+  command: npm run start
