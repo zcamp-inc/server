@@ -14,23 +14,23 @@ export class Post {
   @PrimaryKey()
   id!: number;
 
-  @Field()
+  @Field(() => String)
   @Property()
   createdAt = new Date();
 
-  @Field()
+  @Field(() => String)
   @Property()
   updatedAt = new Date();
 
-  @Field()
+  @Field(() => String)
   @Property({ length:100})
   title!: string;
 
-  @Field()
+  @Field(() => String)
   @Property({length:15000})
   body = "";
 
-  @Field()
+  @Field(() => String)
   @Property()
   isDisabled = false;
 

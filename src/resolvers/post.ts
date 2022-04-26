@@ -14,8 +14,8 @@ import {
 import { MyContext } from "../types";
 import { Post } from "../entities/Post";
 import { isAuth } from "../middleware/isAuth";
-import { User } from "src/entities/User";
-import { PostVote } from "src/entities/PostVote";
+import { User } from "../entities/User";
+import { PostVote } from "../entities/PostVote";
 import { UserResponse, PostResponse } from "../types";
 
 @Resolver(Post)
@@ -71,7 +71,7 @@ export class PostResolver {
   @UseMiddleware(isAuth)
   async create(
       @Arg("title") title: string,
-      @Arg("body", {nullable: true}) body: string | null,
+      @Arg("body", {nullable: true}) body: string,
       @Ctx() { em, req }: MyContext
   ): Promise<PostResponse> {
 
@@ -93,8 +93,8 @@ export class PostResolver {
   @UseMiddleware(isAuth)
   async update(
       @Arg("id", () => Int) id: number, 
-      @Arg("title", {nullable: true}) title: string | null,
-      @Arg("body", {nullable: true}) body: string | null,
+      @Arg("title", {nullable: true}) title: string,
+      @Arg("body", {nullable: true}) body: string,
       @Ctx() { em, req }: MyContext
   ): Promise<PostResponse> {
 
