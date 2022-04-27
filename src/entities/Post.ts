@@ -14,13 +14,13 @@ export class Post {
   @PrimaryKey()
   id!: number;
 
-  @Field(() => String)
+  @Field()
   @Property()
-  createdAt = new Date();
+  createdAt: Date = new Date();
 
-  @Field(() => String)
+  @Field()
   @Property()
-  updatedAt = new Date();
+  updatedAt: Date = new Date();
 
   @Field(() => String)
   @Property({ length:100})
@@ -30,9 +30,13 @@ export class Post {
   @Property({length:15000})
   body = "";
 
-  @Field(() => String)
+  @Field()
   @Property()
-  isDisabled = false;
+  isDisabled: boolean = false;
+
+  @Field()
+  @Property()
+  wasEdited: boolean = false;
 
   @ManyToOne(() => Category)
   category: Category;

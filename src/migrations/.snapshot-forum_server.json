@@ -252,6 +252,15 @@
           "nullable": false,
           "mappedType": "boolean"
         },
+        "was_edited": {
+          "name": "was_edited",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "boolean"
+        },
         "category_id": {
           "name": "category_id",
           "type": "int",
@@ -355,6 +364,15 @@
         },
         "is_disabled": {
           "name": "is_disabled",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "boolean"
+        },
+        "was_edited": {
+          "name": "was_edited",
           "type": "boolean",
           "unsigned": false,
           "autoincrement": false,

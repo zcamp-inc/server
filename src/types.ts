@@ -5,6 +5,7 @@ import { Redis } from "ioredis";
 import { ObjectType, Field } from 'type-graphql';
 import { User } from './entities/User';
 import { Post } from './entities/Post';
+import { Comment } from './entities/Comment';
 
 export type MyContext = {
   req:  Request ;
@@ -35,6 +36,14 @@ export class PostResponse{
     errors?: FieldError[];
     @Field(()=>Post, {nullable: true})
     post?: Post;
+}
+
+@ObjectType()
+export class CommentResponse{
+    @Field(()=> [FieldError], {nullable: true})
+    errors?: FieldError[];
+    @Field(()=>Post, {nullable: true})
+    comment?: Comment;
 }
 
 

@@ -95,7 +95,7 @@ export class PostResolver {
       @Arg("id", () => Int) id: number, 
       @Arg("title", {nullable: true}) title: string,
       @Arg("body", {nullable: true}) body: string,
-      @Ctx() { em, req }: MyContext
+      @Ctx() { em }: MyContext
   ): Promise<PostResponse> {
 
       const post = await em.findOne(Post, {id});
@@ -103,13 +103,15 @@ export class PostResolver {
       if (title){post.title = title;}
       if (body){post.body = body;}
 
+      post.wasEdited = true;
+
       await em.persistAndFlush(post);
       return {post, };
 
       } else{
           return {errors:[{
               field: "Error in fetching post.",
-              message: `Post with id ${id} could not be fetched.`
+              message: "Post with id could not be fetched."
           }]}
       }
   }
@@ -138,7 +140,7 @@ export class PostResolver {
           }
 
           if(isAuth){
-              await em.nativeDelete(Post, {id: post.id});
+              await em.nativeDelete(Post, {id});
               return true;
           }
       }

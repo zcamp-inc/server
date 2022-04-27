@@ -6,7 +6,6 @@ import { Comment } from "./Comment";
 
 @Entity()
 export class CommentVote {
-
   @PrimaryKey()
   userId!: number;
 
@@ -22,5 +21,11 @@ export class CommentVote {
   @ManyToOne(() => User, {onDelete: "CASCADE"})
   user: User;
 
+
+  constructor(user: User, comment: Comment, value: number){
+    this.user = user;
+    this.comment = comment;
+    this.value = value;
+  }
 
 }

@@ -3,23 +3,36 @@ import { CommentVote } from "./CommentVote";
 import { Post } from "./Post";
 import { User } from "./User";
 
+import { ObjectType, Field } from "type-graphql";
+
+@ObjectType()
 @Entity()
 export class Comment {
 
+  @Field()
   @PrimaryKey()
   id!: number;
 
+  @Field()
   @Property()
-  createdAt = new Date();
+  createdAt: Date = new Date();
 
+  @Field()
   @Property()
-  updatedAt = new Date();
+  updatedAt: Date = new Date();
 
+  @Field(() => String)
   @Property({length:3000})
-  body = "";
+  body: string;
 
+  @Field()
   @Property()
-  isDisabled = false;
+  isDisabled: boolean = false;
+
+  @Field()
+  @Property()
+  wasEdited: boolean = false;
+
 
   @ManyToOne(() => Post, {nullable: true})
   post: Post;
@@ -39,6 +52,16 @@ export class Comment {
 
   @OneToMany(() => CommentVote, commentVote => commentVote.comment)
   votes = new Collection<CommentVote>(this);
+
+  constructor(owner: User, body: string, post:Post, parentComment: Comment | null ){
+    this.owner = owner;
+    this.body = body;
+    this.post = post;
+
+    if (parentComment){
+      this.parentComment = parentComment;
+    }
+  }
 
 
 
