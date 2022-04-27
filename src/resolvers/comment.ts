@@ -16,11 +16,11 @@ import { Post } from "../entities/Post";
 import { Comment } from "../entities/Comment";
 import { isAuth } from "../middleware/isAuth";
 import { User } from "../entities/User";
-import { CommentVote } from "src/entities/CommentVote";
+import { CommentVote } from "../entities/CommentVote";
 import { UserResponse, PostResponse, CommentResponse } from "../types";
 
-@Resolver(Post)
-export class PostResolver {
+@Resolver(Comment)
+export class CommentResolver {
 
   @FieldResolver(() => Int)
   voteCount(@Root() comment: Comment){
@@ -155,13 +155,13 @@ export class PostResolver {
       let isAuth = false;
       const comment = await em.findOne(Comment, {id});
       if(comment){
-          const category = comment.post.category;
+          const group = comment.post.group;
 
           // check if user is creator or moderator
           if(comment.owner.id === req.session.userid){
               isAuth = true;
           }
-          for(const moderator of category.moderators){
+          for(const moderator of group.moderators){
               if(moderator.id === req.session.userid){
                   isAuth = true;
               }

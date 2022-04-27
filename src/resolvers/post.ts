@@ -17,6 +17,7 @@ import { isAuth } from "../middleware/isAuth";
 import { User } from "../entities/User";
 import { PostVote } from "../entities/PostVote";
 import { UserResponse, PostResponse } from "../types";
+import { Group } from "../entities/Group";
 
 @Resolver(Post)
 export class PostResolver {
@@ -72,12 +73,17 @@ export class PostResolver {
   async create(
       @Arg("title") title: string,
       @Arg("body", {nullable: true}) body: string,
+      @Arg("groupId") groupId: number,
       @Ctx() { em, req }: MyContext
   ): Promise<PostResponse> {
 
       const user = await em.findOne(User, {id: req.session.userid});
-      if (user){
-          const post =  new Post(user, title, body);
+      const group = await em.findOne(Group, {id: groupId});
+
+      
+      if (user && group){
+          // TODO: you have to be a uni member to post in a uni group
+          const post =  new Post(user, title, group, body);
           await em.persistAndFlush(post);
           return {post, };
       } else{
@@ -127,13 +133,12 @@ export class PostResolver {
       let isAuth = false;
       const post = await em.findOne(Post, {id});
       if(post){
-          const category = post.category;
-
+          const group = post.group;
           // check if user is creator or moderator
           if(post.owner.id === req.session.userid){
               isAuth = true;
           }
-          for(const moderator of category.moderators){
+          for(const moderator of group.moderators){
               if(moderator.id === req.session.userid){
                   isAuth = true;
               }

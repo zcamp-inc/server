@@ -1,11 +1,13 @@
-import { Entity, PrimaryKey, Property, ManyToMany, Collection, OneToMany } from "@mikro-orm/core";
-import { Category } from "./Category";
+import { Entity, PrimaryKey, Property, ManyToMany, Collection, OneToMany, ManyToOne } from "@mikro-orm/core";
+import { ObjectType, Field } from "type-graphql";
+
+import { Group } from "./Group";
 import { Post } from "./Post";
 import { Comment } from "./Comment";
 import { PostVote } from "./PostVote";
 import { CommentVote } from "./CommentVote";
+import { University } from "./University";
 
-import { ObjectType, Field } from "type-graphql";
 
 @ObjectType()
 @Entity()
@@ -37,12 +39,11 @@ export class User {
   @Property()
   profileImgUrl = "https://i.imgur.com/OQENGf1.jpeg";
 
+  @ManyToMany(() => Group, group => group.members, {owner: true})
+  subscriptions = new Collection<Group>(this);
 
-  @ManyToMany(() => Category, category => category.members, {owner: true})
-  subscriptions = new Collection<Category>(this);
-
-  @ManyToMany(() => Category, category => category.moderators, {owner: true})
-  moderating = new Collection<Category>(this);
+  @ManyToMany(() => Group, group => group.moderators, {owner: true})
+  moderating = new Collection<Group>(this);
 
   @OneToMany(()=> Post, post => post.owner)
   posts = new Collection<Post>(this);
@@ -50,24 +51,20 @@ export class User {
   @OneToMany(()=> Comment, comment => comment.owner)
   comments = new Collection<Comment>(this);
 
-  @ManyToMany(() => Post, post => post.savers, {owner: true})
-  savedPosts = new Collection<Post>(this);
-
-  @ManyToMany(() => Comment, comment  => comment.savers, {owner: true})
-  savedComments = new Collection<Post>(this);
-
-  
   @OneToMany(() => PostVote, postVote => postVote.user)
   postVotes = new Collection<PostVote>(this);
-
 
   @OneToMany(() => CommentVote, commentVote => commentVote.user)
   commentVotes = new Collection<PostVote>(this);
 
+  @ManyToOne(() => University)
+  university : University;
 
-  constructor(username: string, email: string, passwordHash: string){
+  
+  constructor(username: string, email: string, passwordHash: string, university: University){
     this.username = username;
     this.email = email;
+    this.university = university;
     this.passwordHash = passwordHash;
   }
 

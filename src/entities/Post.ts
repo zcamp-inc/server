@@ -1,5 +1,5 @@
-import { Entity, PrimaryKey, Property, ManyToOne, Collection, ManyToMany, OneToMany} from "@mikro-orm/core";
-import { Category } from "./Category";
+import { Entity, PrimaryKey, Property, ManyToOne, Collection, OneToMany} from "@mikro-orm/core";
+import { Group } from "./Group";
 import { User } from "./User";
 import { PostVote } from "./PostVote";
 
@@ -38,26 +38,22 @@ export class Post {
   @Property()
   wasEdited: boolean = false;
 
-  @ManyToOne(() => Category)
-  category: Category;
+  @ManyToOne(() => Group)
+  group: Group;
 
   @ManyToOne(() => User)
   owner: User;
-
-  @ManyToMany(() => User, user => user.savedPosts)
-  savers = new Collection<User>(this);
 
   @OneToMany(() => PostVote, postvote => postvote.post)
   votes = new Collection<PostVote>(this);
 
 
-  constructor(owner: User, title: string, body: string | null){
+  constructor(owner: User, title: string, group: Group, body: string | null){
     this.owner = owner;
     this.title = title;
+    this.group = group;
     if (body){
       this.body = body;
     }
   }
-
-
 }

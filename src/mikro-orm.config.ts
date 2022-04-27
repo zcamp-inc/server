@@ -1,11 +1,11 @@
 import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
+
 require("dotenv").config();
 
-
-
-import { Category } from "./entities/Category";
+import { Group } from "./entities/Group";
+import { University } from "./entities/University";
 import { Comment } from "./entities/Comment";
 import { CommentVote } from "./entities/CommentVote";
 import { Post } from "./entities/Post";
@@ -20,7 +20,8 @@ export default {
         pattern: /^[\w-]+\d+\.[tj]s$/, 
     },
     entities:[
-        Category,
+        Group,
+        University,
         Comment,
         CommentVote,
         Post,

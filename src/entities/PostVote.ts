@@ -2,7 +2,6 @@ import { Entity, PrimaryKey, Property, ManyToOne } from "@mikro-orm/core";
 import { User } from "./User";
 import { Post } from "./Post";
 
-
 @Entity()
 export class PostVote {
 

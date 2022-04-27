@@ -1,9 +1,9 @@
-import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, ManyToMany } from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection } from "@mikro-orm/core";
+import { ObjectType, Field } from "type-graphql";
+
 import { CommentVote } from "./CommentVote";
 import { Post } from "./Post";
 import { User } from "./User";
-
-import { ObjectType, Field } from "type-graphql";
 
 @ObjectType()
 @Entity()
@@ -46,9 +46,6 @@ export class Comment {
 
   @ManyToOne(() => User)
   owner: User;
-
-  @ManyToMany(() => User, user => user.savedComments)
-  savers = new Collection<User>(this);
 
   @OneToMany(() => CommentVote, commentVote => commentVote.comment)
   votes = new Collection<CommentVote>(this);

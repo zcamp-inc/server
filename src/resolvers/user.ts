@@ -16,6 +16,8 @@ import {COOKIE_NAME} from "../constants";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
 import { validateRegister } from "../utils/validateRegister";
 import { UserResponse } from "../types";
+import {getUniversity} from "../utils/getUniversity";
+import { University } from "../entities/University";
 
 
 @Resolver(User)
@@ -47,13 +49,38 @@ export class UserResolver {
     }
 
     const hashedPassword = await argon2.hash(options.password);
+    let university = getUniversity(options.email);
+    
 
     try {
-      const user = new User(options.username, options.email, hashedPassword);
-      em.persistAndFlush(user);
-
-      req.session.userid = user.id;
-      return { user };
+      if (university){
+        const uni = await em.findOne(University, {name: university});
+        if (uni){
+            const user = new User(options.username, options.email, hashedPassword, uni);
+            em.persistAndFlush(user);
+            req.session.userid = user.id;
+            return { user, };
+          } else{
+            return {
+              errors: [
+                {
+                  field: "Error occured in user creation.",
+                  message: "University from email could not be found.",
+                },
+              ],};
+          }
+      } else{
+        //TODO: this is where we would create a non-student account
+        return {
+          errors: [
+            {
+              field: "Error occured in user creation.",
+              message: "University from email does not exist.",
+            },
+          ],
+        };
+      }
+    
 
     } catch (err) {
         return {
