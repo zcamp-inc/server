@@ -8,7 +8,8 @@ import {
     FieldResolver,
     Root,
     UseMiddleware,
-    Int
+    Int,
+    Mutation
   } from "type-graphql";
 
 import { MyContext } from "../types";
@@ -184,5 +185,23 @@ export class PostResolver {
     }
   }
 
-}
 
+
+@Mutation(() => Boolean)
+@UseMiddleware(isAuth)
+async save(
+  @Arg("id", ()=>Int) id: number,
+  @Ctx() {em,req} : MyContext
+): Promise<boolean>{
+  const user = await em.findOne(User, {id: req.session.userid});
+  const post = await em.findOne(Post, {id});
+  if(user && post){
+
+    user.savedPosts.add(post);
+    em.persistAndFlush(user);
+    return true;
+  }else{
+    return false;
+  }
+
+}

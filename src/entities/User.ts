@@ -60,6 +60,9 @@ export class User {
   @ManyToOne(() => University)
   university : University;
 
+  @ManyToMany(() => Post, post => post.savers, {owner: true})
+  savedPosts = new Collection<Post>(this);
+
   
   constructor(username: string, email: string, passwordHash: string, university: University){
     this.username = username;

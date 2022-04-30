@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, ManyToOne, Collection, OneToMany} from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property, ManyToOne, Collection, OneToMany, ManyToMany} from "@mikro-orm/core";
 import { Group } from "./Group";
 import { User } from "./User";
 import { PostVote } from "./PostVote";
@@ -46,6 +46,9 @@ export class Post {
 
   @OneToMany(() => PostVote, postvote => postvote.post)
   votes = new Collection<PostVote>(this);
+
+  @ManyToMany(() => User, user => user.savedPosts)
+  savers = new Collection<User>(this);
 
 
   constructor(owner: User, title: string, group: Group, body: string | null){
