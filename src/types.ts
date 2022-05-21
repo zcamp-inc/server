@@ -47,4 +47,14 @@ export class CommentResponse{
 }
 
 
+@ObjectType()
+export class PaginatedPosts {
+  @Field(() => [Post], {nullable: true})
+  posts?: Post[];
+  @Field()
+  hasMore: boolean;
+  @Field()
+  cursor: number;
+}
+
 //   req: Request & { session: Express.Session };

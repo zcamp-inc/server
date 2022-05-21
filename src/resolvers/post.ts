@@ -9,7 +9,6 @@ import {
     Root,
     UseMiddleware,
     Int,
-    Mutation
   } from "type-graphql";
 
 import { MyContext } from "../types";
@@ -17,8 +16,9 @@ import { Post } from "../entities/Post";
 import { isAuth } from "../middleware/isAuth";
 import { User } from "../entities/User";
 import { PostVote } from "../entities/PostVote";
-import { UserResponse, PostResponse } from "../types";
+import { UserResponse, PostResponse, PaginatedPosts } from "../types";
 import { Group } from "../entities/Group";
+import { QueryOrder } from "@mikro-orm/core";
 
 @Resolver(Post)
 export class PostResolver {
@@ -67,6 +67,76 @@ export class PostResolver {
         }]}
     }
   }
+
+  // @UseMiddleware(isAuth)
+  // @Query(() => PaginatedPosts)
+  // async homePosts(
+  //   @Arg("limit", () => Int) limit: number,
+  //   @Arg("cursor", () => Int) cursor: number | null,
+  //   @Arg("sortBy", () => String, {nullable: true}) sortBy: string | null,
+  //   @Ctx() { em, req }: MyContext
+  // ): Promise<PaginatedPosts> {
+  //   cursor = (cursor === null ) ? 0 : cursor;
+  //   sortBy = (sortBy === null ) ? "recent" : sortBy;
+
+  //   const user = await em.findOne(User, {id: req.session.userid});
+  //   const groups = user?.subscriptions;
+
+  //   if (user && groups){
+  //     const maxLimit: number = 50;
+  //     limit = Math.min(maxLimit, limit);
+
+  //     if (sortBy === "recent"){
+  //       //we have to somehow aggregate from all of them
+  //       const [posts, count] = await em.findAndCount(Post, {group : {$in : groups}} , { limit: limit, offset: cursor });
+  //     }
+
+  //   }
+
+  //   return {
+  //     posts: posts.slice(0, realLimit),
+  //     hasMore: posts.length === reaLimitPlusOne,
+  //     cursor : cursor + limit,
+  //   };
+  // }
+
+  @UseMiddleware(isAuth)
+  @Query(() => PaginatedPosts)
+  async trending(
+    @Arg("limit", () => Int) limit: number,
+    @Arg("cursor", () => Int) cursor: number | null,
+    @Arg("sortBy", () => String, {nullable: true}) sortBy: string | null,
+    @Ctx() { em, req }: MyContext
+  ): Promise<PaginatedPosts> {
+    cursor = (cursor === null ) ? 0 : cursor;
+    sortBy = (sortBy === null ) ? "recent" : sortBy;
+
+
+    const maxLimit: number = 50;
+    limit = Math.min(maxLimit, limit);
+
+    if (sortBy === "best"){
+
+      const time_period = new Date( new Date().getTime() -  1000 * 60 * 60 * 24 * 2);
+      const [posts, count] = await em.findAndCount(Post, {createdAt: {$gt: time_period} }, { limit: limit, offset: cursor, orderBy: {voteCount: QueryOrder.DESC} });
+
+      return {
+        posts: posts,
+        hasMore: limit+cursor+1 < count,
+        cursor : cursor + limit +1,
+      };
+    } else { // sortBy === "recent"
+      const [posts, count] = await em.findAndCount(Post, {}, { limit: limit, offset: cursor });
+
+      return {
+        posts: posts,
+        hasMore: limit+cursor+1 < count,
+        cursor : cursor + limit +1,
+      };
+    }
+
+  }
+
 
 
   @Mutation(() => PostResponse)
@@ -172,12 +242,17 @@ export class PostResolver {
 
       const postVote = await em.findOne(PostVote, {post, user});  //check if vote exists
       if (postVote){
+          post.voteCount -= postVote.value;
           postVote.value = value;
+          post.voteCount += postVote.value;
           await em.persistAndFlush(postVote);
       }else{
         const newPostVote = new PostVote(user, post, value);
+        post.voteCount -= newPostVote.value;
+
         await em.persistAndFlush(newPostVote);
       }
+      await em.persistAndFlush(post);
       return true;    
 
     }else{
@@ -203,5 +278,5 @@ async save(
   }else{
     return false;
   }
-
+  }
 }

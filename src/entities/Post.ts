@@ -30,9 +30,14 @@ export class Post {
   @Property({length:15000})
   body = "";
 
+
   @Field()
   @Property()
   isDisabled: boolean = false;
+
+  @Field()
+  @Property()
+  voteCount: number = 0;
 
   @Field()
   @Property()
