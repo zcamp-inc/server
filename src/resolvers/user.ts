@@ -35,7 +35,7 @@ export class UserResolver {
     if (!req.session.userid) {
       return null;
     }
-    return em.findOne(User, {id : req.session.userid});
+    return em.fork({}).findOne(User, {id : req.session.userid});
   }
 
   @Mutation(() => UserResponse)
@@ -50,16 +50,32 @@ export class UserResolver {
 
     const hashedPassword = await argon2.hash(options.password);
     let university = getUniversity(options.email);
-    
 
     try {
       if (university){
-        const uni = await em.findOne(University, {name: university});
+        const uni = await em.fork({}).getRepository(University).findOneOrFail({name: university});
+        
+        
         if (uni){
-            const user = new User(options.username, options.email, hashedPassword, uni);
-            em.persistAndFlush(user);
-            req.session.userid = user.id;
-            return { user, };
+            try{
+              const user = new User( options.username, options.email, hashedPassword );
+              user.university = await em.fork({}).getRepository(University).findOneOrFail({name: university})
+              await em.fork({}).persistAndFlush(user);
+            
+              // uni.students.add(user);
+              // em.fork({}).persistAndFlush(uni);
+
+              // user = await em.fork({}).getRepository(User).findOneOrFail({})
+              // req.session.userid = user.id;
+              return { user, };
+            } catch(err) {
+              return {
+                errors : [{
+                  field : "Could not create user",
+                  message: err.message
+              }]
+              }
+            }
           } else{
             return {
               errors: [
@@ -81,7 +97,6 @@ export class UserResolver {
         };
       }
     
-
     } catch (err) {
         return {
           errors: [
@@ -103,7 +118,7 @@ export class UserResolver {
   ): Promise<UserResponse> {
 
     try{
-      const user = await em.findOneOrFail(User, 
+      const user = await em.fork({}).findOneOrFail(User, 
         usernameOrEmail.includes("@")
           ? { email: usernameOrEmail } 
           : { username: usernameOrEmail })

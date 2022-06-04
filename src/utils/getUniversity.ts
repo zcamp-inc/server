@@ -6,7 +6,9 @@ export const getUniversity = (email: string): string | null => {
     ]);
 
     for (let entry of uniMap.entries()){
-        if (email.split("@")[-1] === entry[0]){
+        
+        if (email.split("@")[1] === entry[0]){
+            console.log('Good')
             return entry[1]
         }
     }

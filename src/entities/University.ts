@@ -21,7 +21,7 @@ export class University {
 
   @Field()
   @Property({length:3000})
-  description!: string;
+  description: string = "Description goes here";
 
   @Field()
   @Property()
@@ -37,5 +37,9 @@ export class University {
 
   @OneToMany(() => User, user => user.university)
   students = new Collection<User>(this);
+
+  constructor(name : string){
+    this.name = name;
+  }
 
 }

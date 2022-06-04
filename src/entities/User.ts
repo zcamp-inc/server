@@ -64,10 +64,9 @@ export class User {
   savedPosts = new Collection<Post>(this);
 
   
-  constructor(username: string, email: string, passwordHash: string, university: University){
+  constructor(username: string, email: string, passwordHash: string){
     this.username = username;
     this.email = email;
-    this.university = university;
     this.passwordHash = passwordHash;
   }
 

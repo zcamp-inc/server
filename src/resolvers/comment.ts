@@ -37,7 +37,7 @@ export class CommentResolver {
     @Root() comment: Comment, 
     @Ctx() {em} : MyContext
   ): Promise<UserResponse>{
-    const user =  await em.findOne(User, {id: comment.owner.id});
+    const user =  await em.fork({}).findOne(User, {id: comment.owner.id});
     if (user){
       return {user,};
     }else{
@@ -56,7 +56,7 @@ export class CommentResolver {
     @Root() comment: Comment, 
     @Ctx() {em} : MyContext
   ): Promise<PostResponse>{
-    const post =  await em.findOne(Post, {id: comment.post.id});
+    const post =  await em.fork({}).findOne(Post, {id: comment.post.id});
     if (post){
       return {post,};
     }else{
@@ -75,7 +75,7 @@ export class CommentResolver {
     @Arg("id") id: number,
     @Ctx() {em}: MyContext
 ): Promise<CommentResponse> {
-    const comment = await em.findOne(Comment, {id});
+    const comment = await em.fork({}).findOne(Comment, {id});
     if (comment){
        return {comment, };
 
@@ -97,19 +97,19 @@ export class CommentResolver {
       @Ctx() { em, req }: MyContext
   ): Promise<CommentResponse> {
 
-      const user = await em.findOne(User, {id: req.session.userid});
-      const post = await em.findOne(Post, {id: postId });
+      const user = await em.fork({}).findOne(User, {id: req.session.userid});
+      const post = await em.fork({}).findOne(Post, {id: postId });
 
       if (user && post){
           if(parentCommentId){
-            const parentComment = await em.findOne(Comment, {id: parentCommentId });
+            const parentComment = await em.fork({}).findOne(Comment, {id: parentCommentId });
             const comment =  new Comment(user, body, post, parentComment);
-            await em.persistAndFlush(comment);
+            await em.fork({}).persistAndFlush(comment);
             return {comment, };
           }
 
           const comment =  new Comment(user, body, post, null);
-          await em.persistAndFlush(comment);
+          await em.fork({}).persistAndFlush(comment);
           return {comment, };
 
       } else{
@@ -129,11 +129,11 @@ export class CommentResolver {
       @Ctx() { em }: MyContext
   ): Promise<CommentResponse> {
 
-      const comment = await em.findOne(Comment, {id});
+      const comment = await em.fork({}).findOne(Comment, {id});
       if (comment){
         comment.body = body;
         comment.wasEdited = true;
-        await em.persistAndFlush(comment);
+        await em.fork({}).persistAndFlush(comment);
         return {comment, };
 
       } else{
@@ -153,7 +153,7 @@ export class CommentResolver {
       ) : Promise<boolean>{
 
       let isAuth = false;
-      const comment = await em.findOne(Comment, {id});
+      const comment = await em.fork({}).findOne(Comment, {id});
       if(comment){
           const group = comment.post.group;
 
@@ -168,7 +168,7 @@ export class CommentResolver {
           }
 
           if(isAuth){
-              await em.nativeDelete(Comment , {id});
+              await em.fork({}).nativeDelete(Comment , {id});
               return true;
           }
       }
@@ -188,16 +188,16 @@ export class CommentResolver {
     (value === 0) ? value = 0 : 
     (value > 1) ? value = 1 : value = -1;
 
-    const user = await em.findOne(User, {id: req.session.userid});
-    const comment = await em.findOne(Comment, {id});
+    const user = await em.fork({}).findOne(User, {id: req.session.userid});
+    const comment = await em.fork({}).findOne(Comment, {id});
     if(user && comment){
-      const commentVote = await em.findOne(CommentVote, {comment, user});  //check if vote exists
+      const commentVote = await em.fork({}).findOne(CommentVote, {comment, user});  //check if vote exists
       if (commentVote){
           commentVote.value = value;
-          await em.persistAndFlush(commentVote);
+          await em.fork({}).persistAndFlush(commentVote);
       }else{
         const newCommentVote = new CommentVote(user, comment, value);
-        await em.persistAndFlush(newCommentVote);
+        await em.fork({}).persistAndFlush(newCommentVote);
       }
       return true;    
 
