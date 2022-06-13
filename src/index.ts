@@ -39,7 +39,10 @@ const main = async() => {
 
     const app = express();
     app.set("trust proxy", 1);
-    app.use( cors());
+    app.use( cors({
+      credentials: true,
+      origin: [ 'http://localhost:3000', 'https://studio.apollographql.com' ]
+    }));
 
     const redis = new Redis({
         port: Number(process.env.REDIS_PORT),
@@ -70,6 +73,7 @@ const main = async() => {
     );
 
     const apolloServer = new ApolloServer({
+      csrfPrevention: true,
         schema: await buildSchema({
           resolvers: [ UserResolver, PostResolver, CommentResolver, UniversityResolver],
           validate: false,
