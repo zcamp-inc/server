@@ -30,12 +30,35 @@ export class UserResolver {
     return "";
   }
 
-  @Query(() => User, { nullable: true })
-  me(@Ctx() {em, req }: MyContext) {
+  @Query(() => UserResponse, { nullable: true })
+  async me(@Ctx() {em, req }: MyContext)
+  :Promise<UserResponse> {
     if (!req.session.userid) {
-      return null;
+      return{
+        errors: [
+          {
+            field: "User not logged in",
+            message: "Cannot fetch user data because no user is logged in."
+          }
+        ]
+      }
     }
-    return em.fork({}).findOne(User, {id : req.session.userid});
+    try{
+
+        const user = await em.fork({}).findOneOrFail(User, {id : req.session.userid});
+        return {
+          user,
+        }
+    } catch (err) {
+        return {
+          errors: [
+            {
+              field: "Error occured while fetching user.",
+              message: err,
+            },
+          ],
+        };
+      }
   }
 
   @Mutation(() => UserResponse)
