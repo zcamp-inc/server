@@ -12,7 +12,7 @@ import { University } from "../entities/University";
 export class UniversityResolver {
 
   @Mutation(() => String)
-  async seed(@Ctx() { em }: MyContext): Promise<String>{
+  async seedUniversities(@Ctx() { em }: MyContext): Promise<String>{
     const uniList  = ['Covenant University', 'Coventry University']
     uniList.forEach((name) => {
         const uni = new University(name);

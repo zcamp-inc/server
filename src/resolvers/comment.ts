@@ -71,7 +71,7 @@ export class CommentResolver {
 
 
   @Query(() => Comment, { nullable: true })
-  async get(
+  async getComment(
     @Arg("id") id: number,
     @Ctx() {em}: MyContext
 ): Promise<CommentResponse> {
@@ -90,7 +90,7 @@ export class CommentResolver {
 
   @Mutation(() => CommentResponse)
   @UseMiddleware(isAuth)
-  async create(
+  async createComment(
       @Arg("postId", () => Int) postId: number,
       @Arg("parentCommentId", () => Int, {nullable: true}) parentCommentId : number|null,
       @Arg("body", {nullable: true}) body: string,
@@ -123,7 +123,7 @@ export class CommentResolver {
 
   @Mutation(() => CommentResponse)
   @UseMiddleware(isAuth)
-  async update(
+  async updateComment(
       @Arg("id", () => Int) id: number, 
       @Arg("body") body: string,
       @Ctx() { em }: MyContext
@@ -147,7 +147,7 @@ export class CommentResolver {
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
-  async delete(
+  async deleteComment(
       @Arg("id") id : number,
       @Ctx() { em, req}: MyContext
       ) : Promise<boolean>{
@@ -178,7 +178,7 @@ export class CommentResolver {
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
-  async vote(
+  async voteComment(
     @Arg("id", ()=>Int) id: number,
     @Arg("value") value: number,
     @Ctx() {em,req} : MyContext
