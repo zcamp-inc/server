@@ -36,9 +36,8 @@ const main = async () => {
   const app = express();
   app.set("trust proxy", 1);
   app.use(cors({
-    //Fixed Cors error here: added callback for updated graphql endpoint
     credentials: true,
-    origin: [ 'http://localhost:3000', 'https://studio.apollographql.com']
+    origin: [ 'http://localhost:3000', 'https://studio.apollographql.com' ]
   }));
 
   const redis = new Redis({
