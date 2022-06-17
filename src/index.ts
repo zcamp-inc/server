@@ -5,7 +5,7 @@ import cors from "cors";
 import connectRedis from "connect-redis";
 import Redis from "ioredis";
 
-import {MikroORM} from "@mikro-orm/core";
+import { MikroORM } from "@mikro-orm/core";
 import microConfig from "./mikro-orm.config";
 
 import {__prod__} from "./constants";
@@ -39,7 +39,11 @@ const main = async() => {
 
     const app = express();
     app.set("trust proxy", 1);
-    app.use( cors());
+    app.use( cors({
+      //Fixed Cors error here: added callback for updated graphql endpoint
+      credentials: true,
+      origin: [ 'http://localhost:3000', 'https://studio.apollographql.com']
+    }));
 
     const redis = new Redis({
         port: Number(process.env.REDIS_PORT),
@@ -86,7 +90,10 @@ const main = async() => {
     
       apolloServer.applyMiddleware({
         app,
-        cors: false,
+        cors: {
+          origin: ["http://localhost:3000", "https://studio.apollographql.com"],
+          credentials: true
+        },
       });
     
       app.listen({port: process.env.SERVER_PORT}, () => {
