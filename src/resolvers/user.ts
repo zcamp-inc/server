@@ -30,16 +30,39 @@ export class UserResolver {
     return "";
   }
 
-  @Query(() => User, { nullable: true })
-  me(@Ctx() {em, req }: MyContext) {
+  @Query(() => UserResponse, { nullable: true })
+  async me(@Ctx() {em, req }: MyContext)
+  :Promise<UserResponse> {
     if (!req.session.userid) {
-      return null;
+      return{
+        errors: [
+          {
+            field: "User not logged in",
+            message: "Cannot fetch user data because no user is logged in."
+          }
+        ]
+      }
     }
-    return em.fork({}).findOne(User, {id : req.session.userid});
+    try{
+
+        const user = await em.fork({}).findOneOrFail(User, {id : req.session.userid});
+        return {
+          user,
+        }
+    } catch (err) {
+        return {
+          errors: [
+            {
+              field: "Error occured while fetching user.",
+              message: err,
+            },
+          ],
+        };
+      }
   }
 
   @Mutation(() => UserResponse)
-  async register(
+  async registerUser(
     @Arg("options") options: UsernamePasswordInput,
     @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
@@ -111,7 +134,7 @@ export class UserResolver {
   }
 
   @Mutation(() => UserResponse)
-  async login(
+  async loginUser(
     @Arg("usernameOrEmail") usernameOrEmail: string,
     @Arg("password") password: string,
     @Ctx() {em, req }: MyContext
@@ -155,7 +178,7 @@ export class UserResolver {
   }
 
   @Mutation(() => Boolean)
-  logout(@Ctx() { req, res }: MyContext) {
+  logoutUser(@Ctx() { req, res }: MyContext) {
     return new Promise((resolve) =>
       req.session.destroy((err: any) => {
         res.clearCookie(COOKIE_NAME);

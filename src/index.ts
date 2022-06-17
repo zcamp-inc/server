@@ -74,6 +74,7 @@ const main = async() => {
     );
 
     const apolloServer = new ApolloServer({
+      csrfPrevention: true,
         schema: await buildSchema({
           resolvers: [ UserResolver, PostResolver, CommentResolver, UniversityResolver],
           validate: false,

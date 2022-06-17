@@ -52,7 +52,7 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  async get(
+  async getPost(
     @Arg("id") id: number,
     @Ctx() {em}: MyContext
 ): Promise<PostResponse> {
@@ -102,7 +102,7 @@ export class PostResolver {
 
   @UseMiddleware(isAuth)
   @Query(() => PaginatedPosts)
-  async trending(
+  async trendingPosts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => Int) cursor: number | null,
     @Arg("sortBy", () => String, {nullable: true}) sortBy: string | null,
@@ -141,7 +141,7 @@ export class PostResolver {
 
   @Mutation(() => PostResponse)
   @UseMiddleware(isAuth)
-  async create(
+  async createPost(
       @Arg("title") title: string,
       @Arg("body", {nullable: true}) body: string,
       @Arg("groupId") groupId: number,
@@ -168,7 +168,7 @@ export class PostResolver {
 
   @Mutation(() => PostResponse)
   @UseMiddleware(isAuth)
-  async update(
+  async updatePost(
       @Arg("id", () => Int) id: number, 
       @Arg("title", {nullable: true}) title: string,
       @Arg("body", {nullable: true}) body: string,
@@ -196,7 +196,7 @@ export class PostResolver {
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
-  async delete(
+  async deletePost(
       @Arg("id") id : number,
       @Ctx() { em, req}: MyContext
       ) : Promise<boolean>{
@@ -226,7 +226,7 @@ export class PostResolver {
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
-  async vote(
+  async votePost(
     @Arg("id", ()=>Int) id: number,
     @Arg("value") value: number,
     @Ctx() {em,req} : MyContext
@@ -264,7 +264,7 @@ export class PostResolver {
 
 @Mutation(() => Boolean)
 @UseMiddleware(isAuth)
-async save(
+async savePost(
   @Arg("id", ()=>Int) id: number,
   @Ctx() {em,req} : MyContext
 ): Promise<boolean>{
