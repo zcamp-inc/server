@@ -6,7 +6,7 @@ import {
     Ctx,
     Query,
     FieldResolver,
-    Root
+    Root,
   } from "type-graphql";
 
 import { MyContext } from "../types";
@@ -61,6 +61,8 @@ export class UserResolver {
       }
   }
 
+  
+
   @Mutation(() => UserResponse)
   async registerUser(
     @Arg("options") options: UsernamePasswordInput,
@@ -89,9 +91,19 @@ export class UserResolver {
               // em.fork({}).persistAndFlush(uni);
 
               // user = await em.fork({}).getRepository(User).findOneOrFail({})
-              // req.session.userid = user.id;
-              return { user, };
+              req.session.userid = user.id;
+              return { user };
             } catch(err) {
+              if (err.code === "23505"){ 
+                return{
+                  errors: [
+                    {
+                      field: "username",
+                      message: "Username already taken"
+                    }
+                  ]
+                }
+            } else {
               return {
                 errors : [{
                   field : "Could not create user",
@@ -99,6 +111,7 @@ export class UserResolver {
               }]
               }
             }
+          }
           } else{
             return {
               errors: [

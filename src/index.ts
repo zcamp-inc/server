@@ -12,10 +12,10 @@ import {__prod__} from "./constants";
 
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
-import { UserResolver } from "./resolvers/user";
 import { PostResolver } from "./resolvers/post";
 import { CommentResolver } from "./resolvers/comment";
 import { UniversityResolver } from "./resolvers/university";
+import { UserResolver } from "./resolvers/user";
 
 
 require("dotenv").config();
@@ -38,11 +38,14 @@ const main = async() => {
     await orm.getMigrator().up();
 
     const app = express();
+
+    
+
     app.set("trust proxy", 1);
     app.use( cors({
       //Fixed Cors error here: added callback for updated graphql endpoint
       credentials: true,
-      origin: [ 'http://localhost:3000', 'https://studio.apollographql.com']
+      origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
     }));
 
     const redis = new Redis({
@@ -91,10 +94,7 @@ const main = async() => {
     
       apolloServer.applyMiddleware({
         app,
-        cors: {
-          origin: ["http://localhost:3000", "https://studio.apollographql.com"],
-          credentials: true
-        },
+        cors: false,
       });
     
       app.listen({port: process.env.SERVER_PORT}, () => {
