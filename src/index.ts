@@ -16,6 +16,7 @@ import { UserResolver } from "./resolvers/user";
 import { PostResolver } from "./resolvers/post";
 import { CommentResolver } from "./resolvers/comment";
 import { UniversityResolver } from "./resolvers/university";
+import { GroupResolver } from "./resolvers/group";
 
 
 require("dotenv").config();
@@ -74,8 +75,8 @@ const main = async() => {
 
     const apolloServer = new ApolloServer({
       csrfPrevention: true,
-        schema: await buildSchema({
-          resolvers: [ UserResolver, PostResolver, CommentResolver, UniversityResolver],
+      schema: await buildSchema({
+          resolvers: [ UserResolver, PostResolver, CommentResolver, UniversityResolver, GroupResolver],
           validate: false,
         }),
         context: ({ req, res }) => ({
