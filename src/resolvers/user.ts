@@ -89,7 +89,7 @@ export class UserResolver {
               // em.fork({}).persistAndFlush(uni);
 
               // user = await em.fork({}).getRepository(User).findOneOrFail({})
-              // req.session.userid = user.id;
+              req.session.userid = user.id;
               return { user, };
             } catch(err) {
               return {
