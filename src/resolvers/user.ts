@@ -92,12 +92,23 @@ export class UserResolver {
               req.session.userid = user.id;
               return { user, };
             } catch(err) {
+              if (err.code === "23505"){ 
+                return{
+                  errors: [
+                    {
+                      field: "username",
+                      message: "Username already taken"
+                    }
+                  ]
+                }
+            } else {
               return {
                 errors : [{
                   field : "Could not create user",
                   message: err.message
               }]
               }
+            }
             }
           } else{
             return {
