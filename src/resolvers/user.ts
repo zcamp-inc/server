@@ -12,7 +12,7 @@ import {
 import { MyContext } from "../types";
 import { User } from "../entities/User";
 import argon2 from "argon2";
-import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
+import { COOKIE_NAME, FORGET_PASSWORD_PREFIX, HTML_LINK } from "../constants";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
 import { validateNewPass, validateRegister } from "../utils/validateRegister";
 import { UserResponse } from "../types";
@@ -89,7 +89,7 @@ export class UserResolver {
     }
     const token = v4();
     await redis.set(FORGET_PASSWORD_PREFIX + token, user.id, "EX", 1000 * 60 * 60 * 24);
-    await sendEmail(email, `<a href="http://localhost:3000/change-password/${token}">reset password</a>`) 
+    await sendEmail(email, HTML_LINK) 
     return true
   }
 
