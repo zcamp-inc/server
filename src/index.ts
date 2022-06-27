@@ -18,7 +18,6 @@ import { CommentResolver } from "./resolvers/comment";
 import { UniversityResolver } from "./resolvers/university";
 import { GroupResolver } from "./resolvers/group";
 
-
 require("dotenv").config();
 
 console.log(process.env.NODE_ENV);
@@ -34,7 +33,6 @@ declare module 'express-session' {
 
 
 const main = async() => {
-
     const orm = await MikroORM.init(microConfig);
     await orm.getMigrator().up();
 
