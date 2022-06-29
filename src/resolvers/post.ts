@@ -68,37 +68,75 @@ export class PostResolver {
     }
   }
 
-  // @UseMiddleware(isAuth)
-  // @Query(() => PaginatedPosts)
-  // async homePosts(
-  //   @Arg("limit", () => Int) limit: number,
-  //   @Arg("cursor", () => Int) cursor: number | null,
-  //   @Arg("sortBy", () => String, {nullable: true}) sortBy: string | null,
-  //   @Ctx() { em, req }: MyContext
-  // ): Promise<PaginatedPosts> {
-  //   cursor = (cursor === null ) ? 0 : cursor;
-  //   sortBy = (sortBy === null ) ? "recent" : sortBy;
+  @UseMiddleware(isAuth)
+  @Query(() => PaginatedPosts)
+  async homePosts(
+    @Arg("limit", () => Int) limit: number,
+    @Arg("cursor", () => Int) cursor: number | null,
+    @Arg("sortBy", () => String, {nullable: true}) sortBy: string | null,
+    @Ctx() { em, req }: MyContext
+  ): Promise<PaginatedPosts> {
+    cursor = (cursor === null ) ? 0 : cursor;
+    sortBy = (sortBy === null ) ? "recent" : sortBy;
 
-  //   const user = await em.findOne(User, {id: req.session.userid});
-  //   const groups = user?.subscriptions;
+    const user = await em.findOne(User, {id: req.session.userid});
 
-  //   if (user && groups){
-  //     const maxLimit: number = 50;
-  //     limit = Math.min(maxLimit, limit);
+    if (user){
+      const groups = user.subscriptions.getItems();
 
-  //     if (sortBy === "recent"){
-  //       //we have to somehow aggregate from all of them
-  //       const [posts, count] = await em.findAndCount(Post, {group : {$in : groups}} , { limit: limit, offset: cursor });
-  //     }
+      if (groups){
+        const maxLimit: number = 50;
+        limit = Math.min(maxLimit, limit);
 
-  //   }
+        if (sortBy === "recent"){
+            const time_period = new Date( new Date().getTime() -  1000 * 60 * 60 * 24 * 2);
+            const [posts, count] = await em
+                                        .fork({})
+                                        .findAndCount(Post, 
+                                          { createdAt: {$gt: time_period}, 
+                                          group : {$in : groups}},  
+                                          {limit: limit, 
+                                          offset: cursor,
+                                          orderBy: {voteCount: QueryOrder.DESC} });
+            return {
+              posts: posts,
+              hasMore: limit+cursor+1 < count,
+              cursor : cursor + limit +1,
+            };
+          }
+        
+        else { // (sortBy === "new")
+            const time_period = new Date( new Date().getTime() -  1000 * 60 * 60 * 24 * 2);
+            const [posts, count] = await em
+                                        .fork({})
+                                        .findAndCount(Post, 
+                                          { createdAt: {$gt: time_period}, 
+                                          group : {$in : groups}},  
+                                          {limit: limit, 
+                                          offset: cursor,
+                                          orderBy: {createdAt: QueryOrder.DESC} });
+            return {
+              posts: posts,
+              hasMore: limit+cursor+1 < count,
+              cursor : cursor + limit +1,
+            };
+          }
 
-  //   return {
-  //     posts: posts.slice(0, realLimit),
-  //     hasMore: posts.length === reaLimitPlusOne,
-  //     cursor : cursor + limit,
-  //   };
-  // }
+      }else{
+      return {
+            posts: undefined,
+            hasMore: false,
+            cursor: -1,
+          };
+      }
+    } else{
+          return {
+            posts: undefined,
+            hasMore: false,
+            cursor: -1,
+          };
+    } 
+  }
 
   @UseMiddleware(isAuth)
   @Query(() => PaginatedPosts)
@@ -118,7 +156,13 @@ export class PostResolver {
     if (sortBy === "best"){
 
       const time_period = new Date( new Date().getTime() -  1000 * 60 * 60 * 24 * 2);
-      const [posts, count] = await em.fork({}).findAndCount(Post, {createdAt: {$gt: time_period} }, { limit: limit, offset: cursor, orderBy: {voteCount: QueryOrder.DESC} });
+      const [posts, count] = await em
+                                  .fork({})
+                                  .findAndCount(Post, 
+                                  {createdAt: {$gt: time_period} }, {
+                                    limit: limit, 
+                                    offset: cursor, 
+                                    orderBy: {voteCount: QueryOrder.DESC} });
 
       return {
         posts: posts,
