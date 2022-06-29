@@ -50,4 +50,33 @@ export class GroupResolver {
       } 
       return false;
   }
+
+  @Mutation(() => [Group])
+  @UseMiddleware(isAuth)
+  async getUserGroups(
+      @Ctx() { em, req }: MyContext
+  ): Promise<Group[]> {
+    const user = await em.fork({}).findOne(User, {id: req.session.userid});
+
+      if (user){
+          return user.subscriptions.getItems();
+      } 
+      return [];
+  }
+
+
+  @Mutation(() => [User])
+  async getGroupUsers(
+      @Arg("groupId") groupId: number,
+      @Ctx() { em, req }: MyContext
+  ): Promise<User[]> {
+
+    const group = await em.fork({}).findOne(Group, {id: groupId});
+
+      if (group){
+          return group.members.getItems();
+      } 
+      return [];
+  }
+
 }
