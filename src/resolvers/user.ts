@@ -12,12 +12,14 @@ import {
 import { MyContext } from "../types";
 import { User } from "../entities/User";
 import argon2 from "argon2";
-import {COOKIE_NAME} from "../constants";
+import { COOKIE_NAME, FORGET_PASSWORD_PREFIX, HTML_LINK } from "../constants";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
-import { validateRegister } from "../utils/validateRegister";
+import { validateNewPass, validateRegister } from "../utils/validateRegister";
 import { UserResponse } from "../types";
 import {getUniversity} from "../utils/getUniversity";
 import { University } from "../entities/University";
+import { sendEmail } from "../utils/sendEmail";
+import { v4 } from 'uuid';
 
 
 @Resolver(User)
@@ -28,6 +30,67 @@ export class UserResolver {
       return user.email;
     }
     return "";
+  }
+
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg('token') token: string,
+    @Arg('newPassword') newPassword: string,
+    @Ctx() {redis, em, req}: MyContext
+  ): Promise<UserResponse> {
+    const errors = validateNewPass(newPassword);
+    if (errors) {
+      return { errors };
+    }
+    const key = FORGET_PASSWORD_PREFIX + token
+    const userId = await redis.get(key)
+    if (!userId){
+      return{
+        errors: [
+          {
+            field: "token",
+            message: "token expired"
+          },
+        ]
+      };
+    }
+
+    const user = await em.fork({}).findOne(User, { id: parseInt(userId) })
+    if(!user){
+      return{
+        errors: [
+          {
+            field: "token",
+            message: "user no longer exists"
+          }
+        ]
+      }
+    }
+
+    user.passwordHash = await argon2.hash(newPassword);
+    await em.fork({}).persistAndFlush(user);
+
+    await redis.del(key)
+
+    //login user on password change [success]
+    req.session.userid = user.id;
+    return { user };
+  }
+
+  @Mutation(() => Boolean)
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() {em, redis} : MyContext
+  ){
+    const user = await em.fork({}).findOne(User, {email});
+    if(!user){
+      // the email is not in db
+      return true;
+    }
+    const token = v4();
+    await redis.set(FORGET_PASSWORD_PREFIX + token, user.id, "EX", 1000 * 60 * 60 * 24);
+    await sendEmail(email, HTML_LINK) 
+    return true
   }
 
   @Query(() => UserResponse, { nullable: true })
@@ -89,15 +152,26 @@ export class UserResolver {
               // em.fork({}).persistAndFlush(uni);
 
               // user = await em.fork({}).getRepository(User).findOneOrFail({})
-              // req.session.userid = user.id;
+              req.session.userid = user.id;
               return { user, };
             } catch(err) {
+              if (err.code === "23505"){ 
+                return{
+                  errors: [
+                    {
+                      field: "username",
+                      message: "Username already taken"
+                    }
+                  ]
+                }
+            } else {
               return {
                 errors : [{
                   field : "Could not create user",
                   message: err.message
               }]
               }
+            }
             }
           } else{
             return {

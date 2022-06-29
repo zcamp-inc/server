@@ -11,8 +11,8 @@ import {
 import { MyContext } from "../types";
 import {Group} from "../entities/Group";
 import { QueryOrder } from "@mikro-orm/core";
-import { isAuth } from "src/middleware/isAuth";
-import { User } from "src/entities/User";
+import { isAuth } from "../middleware/isAuth";
+import { User } from "../entities/User";
 
 
 @Resolver(Group)
