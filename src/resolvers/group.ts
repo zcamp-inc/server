@@ -28,7 +28,7 @@ export class GroupResolver {
   @Query(() => [Group])
   async topGroups(@Ctx() {em}: MyContext) : 
   Promise<Group[]>{
-    const topGroups = await em.fork({}).find(Group, {}, {orderBy: {members: QueryOrder.DESC} });
+    const topGroups = await em.fork({}).find(Group, {}, {orderBy: {members: QueryOrder.DESC}, limit: 5 });
     return topGroups; 
   }
 
@@ -45,7 +45,9 @@ export class GroupResolver {
           // TODO: you have to be a uni member to join a group
           user.subscriptions.add(group);
           group.members.add(user);
-          await em.fork({}).flush();
+          await em.fork({}).persistAndFlush(user);
+          await em.fork({}).persistAndFlush(group);
+
           return true;
       } 
       return false;
