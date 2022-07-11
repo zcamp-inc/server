@@ -56,7 +56,7 @@ export class PostResolver {
     @Arg("id", { defaultValue: 1 }) id: number,
     @Ctx() {em}: MyContext
 ): Promise<PostResponse> {
-    const post = await em.fork({}).findOne(Post, {id});
+    const post = await em.fork({}).findOne(Post, {id}, {populate: ['id']});
     if (post){
        return {post, };
 
@@ -79,8 +79,7 @@ export class PostResolver {
     cursor = (cursor === null ) ? 0 : cursor;
     sortBy = (sortBy === null ) ? "recent" : sortBy;
 
-    const user = await em.fork({}).findOne(User, {id: req.session.userid}, {populate: ["subscriptions"]} );
-
+    const user = await em.fork({}).findOne(User, {id: req.session.userid},  {populate: ["subscriptions"]});
     if (user){
       await user.subscriptions.init();
       const groups = user.subscriptions.getItems();
@@ -97,9 +96,10 @@ export class PostResolver {
                                           { createdAt: {$gt: time_period}, 
                                           group : {$in : groups}},  
                                           {limit: limit,
-                                          populate: ["votes", "savers"],
-                                          offset: cursor,
+                                            populate: ['votes', 'savers', 'title', 'body', 'id', 'createdAt', 'updatedAt', 'wasEdited', 'voteCount', 'group', 'owner', 'owner.id'],
+                                            offset: cursor,
                                           orderBy: {voteCount: QueryOrder.DESC} });
+            // console.log("help@!!!");
             return {
               posts: posts,
               hasMore: limit+cursor+1 < count,
@@ -115,30 +115,37 @@ export class PostResolver {
                                           { createdAt: {$gt: time_period}, 
                                           group : {$in : groups}},  
                                           {limit: limit, 
-                                          populate: ["votes", "savers"],
+                                          populate: ['votes', 'savers', 'title', 'body', 'id', 'createdAt', 'updatedAt', 'wasEdited', 'voteCount', 'group', 'owner', 'owner.id'],
                                           offset: cursor,
                                           orderBy: {createdAt: QueryOrder.DESC} });
+                                          console.log(count, posts, user, groups);
+
             return {
-              posts: posts,
+              posts: posts || [],
               hasMore: limit+cursor+1 < count,
               cursor : cursor + limit +1,
             };
           }
 
       }else{
+        console.log( user, groups, "[2]EWWWW");
+
       return {
-            posts: undefined,
+            posts: [],
             hasMore: false,
             cursor: -1,
           };
       }
     } else{
+      console.log(user, "WEEEEE[3]");
+
           return {
-            posts: undefined,
+            posts: [],
             hasMore: false,
             cursor: -1,
           };
     } 
+   
   }
 
   @Query(() => PaginatedPosts)
