@@ -58,10 +58,11 @@ export class GroupResolver {
   async getUserGroups(
       @Ctx() { em, req }: MyContext
   ): Promise<Group[]> {
-    const user = await em.fork({}).findOne(User, {id: req.session.userid});
+    const user = await em.fork({}).findOne(User, {id: req.session.userid}, {populate: ['subscriptions']});
 
       if (user){
-          return user.subscriptions.getItems();
+        console.log(user.subscriptions.getItems())
+          return user.subscriptions.getItems()
       } 
       return [];
   }

@@ -1,15 +1,14 @@
-
 import {
-    Resolver,
-    Mutation,
-    Arg,
-    Ctx,
-    Query,
-    FieldResolver,
-    Root,
-    UseMiddleware,
-    Int,
-  } from "type-graphql";
+  Resolver,
+  Mutation,
+  Arg,
+  Ctx,
+  Query,
+  FieldResolver,
+  Root,
+  UseMiddleware,
+  Int,
+} from "type-graphql";
 
 import { MyContext } from "../types";
 import { Post } from "../entities/Post";
@@ -22,49 +21,74 @@ import { QueryOrder } from "@mikro-orm/core";
 
 @Resolver(Post)
 export class PostResolver {
-
   @FieldResolver(() => Int)
-  voteCount(@Root() post:Post){
+  voteCount(@Root() post: Post) {
     return post.votes.count();
   }
 
   @FieldResolver(() => String)
-  bodySnippet(@Root() post:Post){
-    return post.body.slice(0,100);
+  bodySnippet(@Root() post: Post) {
+    return post.body.slice(0, 100);
   }
 
-  @FieldResolver(() => User)
+  @FieldResolver(() => UserResponse)
   async creator(
-    @Root() post:Post, 
-    @Ctx() {em} : MyContext
-  ): Promise<UserResponse>{
-    const user =  await em.fork({}).findOne(User, {id: post.owner.id});
-    if (user){
-      return {user,};
-    }else{
+    @Root() post: Post,
+    @Ctx() { em }: MyContext
+  ): Promise<UserResponse> {
+    const user = await em.fork({}).findOne(User, { id: post.owner.id });
+    if (user) {
+      return { user };
+    } else {
       return {
-        errors: [{
-          field: "User not found.",
-          message: "User could not be fetched."
-        }]
-      }
+        errors: [
+          {
+            field: "User not found.",
+            message: "User could not be fetched.",
+          },
+        ],
+      };
     }
   }
 
-  @Query(() => Post, { nullable: true })
+  @Query(() => PostResponse)
   async getPost(
-    @Arg("id", { defaultValue: 1 }) id: number,
-    @Ctx() {em}: MyContext
-): Promise<PostResponse> {
-    const post = await em.fork({}).findOne(Post, {id}, {populate: ['id']});
-    if (post){
-       return {post, };
-
-    } else{
-        return {errors:[{
+    @Arg("id") id: number,
+    @Ctx() { em }: MyContext
+  ): Promise<PostResponse> {
+    const post = await em
+      .fork({})
+      .findOne(
+        Post,
+        { id: id },
+        {
+          populate: [
+            "votes",
+            "savers",
+            "title",
+            "body",
+            "id",
+            "createdAt",
+            "updatedAt",
+            "wasEdited",
+            "voteCount",
+            "group",
+            "owner",
+            "owner.id",
+          ],
+        }
+      );
+    if (post) {
+      return { post };
+    } else {
+      return {
+        errors: [
+          {
             field: "Error in fetching post.",
-            message: "Post could not be fetched."
-        }]}
+            message: "Post could not be fetched.",
+          },
+        ],
+      };
     }
   }
 
@@ -73,235 +97,282 @@ export class PostResolver {
   async homePosts(
     @Arg("limit") limit: number,
     @Arg("cursor", { defaultValue: 0 }) cursor: number,
-    @Arg("sortBy", () => String, {nullable: true}) sortBy: string | null,
+    @Arg("sortBy", () => String, { nullable: true }) sortBy: string | null,
     @Ctx() { em, req }: MyContext
   ): Promise<PaginatedPosts> {
-    cursor = (cursor === null ) ? 0 : cursor;
-    sortBy = (sortBy === null ) ? "recent" : sortBy;
+    cursor = cursor === null ? 0 : cursor;
+    sortBy = sortBy === null ? "recent" : sortBy;
 
-    const user = await em.fork({}).findOne(User, {id: req.session.userid},  {populate: ["subscriptions"]});
-    if (user){
+    const user = await em
+      .fork({})
+      .findOne(
+        User,
+        { id: req.session.userid },
+        { populate: ["subscriptions"] }
+      );
+    if (user) {
       await user.subscriptions.init();
       const groups = user.subscriptions.getItems();
 
-      if (groups){
+      if (groups) {
         const maxLimit: number = 50;
         limit = Math.min(maxLimit, limit);
 
-        if (sortBy === "recent"){
-            const time_period = new Date( new Date().getTime() -  1000 * 60 * 60 * 24 * 2);
-            const [posts, count] = await em
-                                        .fork({})
-                                        .findAndCount(Post, 
-                                          { createdAt: {$gt: time_period}, 
-                                          group : {$in : groups}},  
-                                          {limit: limit,
-                                            populate: ['votes', 'savers', 'title', 'body', 'id', 'createdAt', 'updatedAt', 'wasEdited', 'voteCount', 'group', 'owner', 'owner.id'],
-                                            offset: cursor,
-                                          orderBy: {voteCount: QueryOrder.DESC} });
-            // console.log("help@!!!");
+        if (sortBy === "recent") {
+          const time_period = new Date(
+            new Date().getTime() - 1000 * 60 * 60 * 24 * 2
+          );
+          const [posts, count] = await em
+            .fork({})
+            .findAndCount(
+              Post,
+              { createdAt: { $gt: time_period }, group: { $in: groups } },
+              {
+                limit: limit,
+                populate: [
+                  "votes",
+                  "savers",
+                  "title",
+                  "body",
+                  "id",
+                  "createdAt",
+                  "updatedAt",
+                  "wasEdited",
+                  "voteCount",
+                  "group",
+                  "owner",
+                  "owner.id",
+                ],
+                offset: cursor,
+                orderBy: { voteCount: QueryOrder.DESC },
+              }
+            );
+            console.log(groups);
             return {
-              posts: posts,
-              hasMore: limit+cursor+1 < count,
-              cursor : cursor + limit +1,
-            };
-          }
-        
-        else { // (sortBy === "new")
-            const time_period = new Date( new Date().getTime() -  1000 * 60 * 60 * 24 * 2);
-            const [posts, count] = await em
-                                        .fork({})
-                                        .findAndCount(Post, 
-                                          { createdAt: {$gt: time_period}, 
-                                          group : {$in : groups}},  
-                                          {limit: limit, 
-                                          populate: ['votes', 'savers', 'title', 'body', 'id', 'createdAt', 'updatedAt', 'wasEdited', 'voteCount', 'group', 'owner', 'owner.id'],
-                                          offset: cursor,
-                                          orderBy: {createdAt: QueryOrder.DESC} });
-                                          console.log(count, posts, user, groups);
-
-            return {
-              posts: posts || [],
-              hasMore: limit+cursor+1 < count,
-              cursor : cursor + limit +1,
-            };
-          }
-
-      }else{
-        console.log( user, groups, "[2]EWWWW");
-
-      return {
-            posts: [],
-            hasMore: false,
-            cursor: -1,
+            posts: posts,
+            hasMore: limit + cursor + 1 < count,
+            cursor: cursor + limit + 1,
           };
-      }
-    } else{
-      console.log(user, "WEEEEE[3]");
+        } else {
+          // (sortBy === "new")
+          const time_period = new Date(
+            new Date().getTime() - 1000 * 60 * 60 * 24 * 2
+          );
+          const [posts, count] = await em
+            .fork({})
+            .findAndCount(
+              Post,
+              { createdAt: { $gt: time_period }, group: { $in: groups } },
+              {
+                limit: limit,
+                populate: [
+                  "votes",
+                  "savers",
+                  "title",
+                  "body",
+                  "id",
+                  "createdAt",
+                  "updatedAt",
+                  "wasEdited",
+                  "voteCount",
+                  "group",
+                  "owner",
+                  "owner.id",
+                ],
+                offset: cursor,
+                orderBy: { createdAt: QueryOrder.DESC },
+              }
+            );
+          console.log(groups);
 
           return {
-            posts: [],
-            hasMore: false,
-            cursor: -1,
+            posts: posts || [],
+            hasMore: limit + cursor + 1 < count,
+            cursor: cursor + limit + 1,
           };
-    } 
-   
+        }
+      } else {
+        return {
+          posts: [],
+          hasMore: false,
+          cursor: -1,
+        };
+      }
+    } else {
+      return {
+        posts: [],
+        hasMore: false,
+        cursor: -1,
+      };
+    }
   }
 
   @Query(() => PaginatedPosts)
-  @UseMiddleware(isAuth)
   async trendingPosts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => Int) cursor: number | null,
-    @Arg("sortBy", () => String, {nullable: true}) sortBy: string | null,
+    @Arg("sortBy", () => String, { nullable: true }) sortBy: string | null,
     @Ctx() { em, req }: MyContext
   ): Promise<PaginatedPosts> {
-    cursor = (cursor === null ) ? 0 : cursor;
-    sortBy = (sortBy === null ) ? "recent" : sortBy;
-
+    cursor = cursor === null ? 0 : cursor;
+    sortBy = sortBy === null ? "recent" : sortBy;
 
     const maxLimit: number = 50;
     limit = Math.min(maxLimit, limit);
 
-    if (sortBy === "best"){
-
-      const time_period = new Date( new Date().getTime() -  1000 * 60 * 60 * 24 * 2);
-      const [posts, count] = await em
-                                  .fork({})
-                                  .findAndCount(Post, 
-                                  {createdAt: {$gt: time_period} }, {
-                                    limit: limit, 
-                                    offset: cursor, 
-                                    populate:["votes", "savers", "voteCount"],
-                                    orderBy: {voteCount: QueryOrder.DESC} });
+    if (sortBy === "best") {
+      const time_period = new Date(
+        new Date().getTime() - 1000 * 60 * 60 * 24 * 2
+      );
+      const [posts, count] = await em.fork({}).findAndCount(
+        Post,
+        { createdAt: { $gt: time_period } },
+        {
+          limit: limit,
+          offset: cursor,
+          populate: ["votes", "savers", "voteCount"],
+          orderBy: { voteCount: QueryOrder.DESC },
+        }
+      );
 
       return {
         posts: posts,
-        hasMore: limit+cursor+1 < count,
-        cursor : cursor + limit +1,
+        hasMore: limit + cursor + 1 < count,
+        cursor: cursor + limit + 1,
       };
-    } else { // sortBy === "recent"
-      const [posts, count] = await em.fork({}).findAndCount(Post, {}, { limit: limit, offset: cursor, populate:["votes", "savers", "voteCount"] });
+    } else {
+      // sortBy === "recent"
+      const [posts, count] = await em
+        .fork({})
+        .findAndCount(
+          Post,
+          {},
+          {
+            limit: limit,
+            offset: cursor,
+            populate: ["votes", "savers", "voteCount"],
+          }
+        );
 
       return {
         posts: posts,
-        hasMore: limit+cursor+1 < count,
-        cursor : cursor + limit +1,
+        hasMore: limit + cursor + 1 < count,
+        cursor: cursor + limit + 1,
       };
     }
-
   }
-
-
 
   @Mutation(() => PostResponse)
   @UseMiddleware(isAuth)
   async createPost(
-      @Arg("title") title: string,
-      @Arg("body", {nullable: true}) body: string,
-      @Arg("groupId") groupId: number,
-      @Ctx() { em, req }: MyContext
+    @Arg("title") title: string,
+    @Arg("body", { nullable: true }) body: string,
+    @Arg("groupId") groupId: number,
+    @Ctx() { em, req }: MyContext
   ): Promise<PostResponse> {
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const group = await em.fork({}).findOne(Group, { id: groupId });
 
-      const user = await em.fork({}).findOne(User, {id: req.session.userid});
-      const group = await em.fork({}).findOne(Group, {id: groupId});
-
-      
-      if (user && group){
-          // TODO: you have to be a uni member to post in a uni group
-          const post =  new Post(user, title, group, body);
-          await em.fork({}).persistAndFlush(post);
-          return {post, };
-      } else{
-          return {errors:[{
-              field: "Error in fetching user.",
-              message: "User with session id could not be fetched."
-          }]}
-      }
+    if (user && group) {
+      // TODO: you have to be a uni member to post in a uni group
+      const post = new Post(user, title, group, body);
+      await em.fork({}).persistAndFlush(post);
+      return { post };
+    } else {
+      return {
+        errors: [
+          {
+            field: "Error in fetching user.",
+            message: "User with session id could not be fetched.",
+          },
+        ],
+      };
+    }
   }
-
 
   @Mutation(() => PostResponse)
   @UseMiddleware(isAuth)
   async updatePost(
-      @Arg("id", () => Int) id: number, 
-      @Arg("title", {nullable: true}) title: string,
-      @Arg("body", {nullable: true}) body: string,
-      @Ctx() { em }: MyContext
+    @Arg("id", () => Int) id: number,
+    @Arg("title", { nullable: true }) title: string,
+    @Arg("body", { nullable: true }) body: string,
+    @Ctx() { em }: MyContext
   ): Promise<PostResponse> {
-
-      const post = await em.fork({}).findOne(Post, {id});
-      if (post){
-      if (title){post.title = title;}
-      if (body){post.body = body;}
+    const post = await em.fork({}).findOne(Post, { id });
+    if (post) {
+      if (title) {
+        post.title = title;
+      }
+      if (body) {
+        post.body = body;
+      }
 
       post.wasEdited = true;
 
       await em.fork({}).persistAndFlush(post);
-      return {post, };
-
-      } else{
-          return {errors:[{
-              field: "Error in fetching post.",
-              message: "Post with id could not be fetched."
-          }]}
-      }
+      return { post };
+    } else {
+      return {
+        errors: [
+          {
+            field: "Error in fetching post.",
+            message: "Post with id could not be fetched.",
+          },
+        ],
+      };
+    }
   }
-
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
   async deletePost(
-      @Arg("id") id : number,
-      @Ctx() { em, req}: MyContext
-      ) : Promise<boolean>{
-
-      let isAuth = false;
-      const post = await em.fork({}).findOne(Post, {id});
-      if(post){
-          const group = post.group;
-          // check if user is creator or moderator
-          if(post.owner.id === req.session.userid){
-              isAuth = true;
-          }
-          for(const moderator of group.moderators){
-              if(moderator.id === req.session.userid){
-                  isAuth = true;
-              }
-          }
-
-          if(isAuth){
-              await em.fork({}).nativeDelete(Post, {id});
-              return true;
-          }
+    @Arg("id") id: number,
+    @Ctx() { em, req }: MyContext
+  ): Promise<boolean> {
+    let isAuth = false;
+    const post = await em.fork({}).findOne(Post, { id });
+    if (post) {
+      const group = post.group;
+      // check if user is creator or moderator
+      if (post.owner.id === req.session.userid) {
+        isAuth = true;
       }
-      return false;
-  };
+      for (const moderator of group.moderators) {
+        if (moderator.id === req.session.userid) {
+          isAuth = true;
+        }
+      }
 
+      if (isAuth) {
+        await em.fork({}).nativeDelete(Post, { id });
+        return true;
+      }
+    }
+    return false;
+  }
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
   async votePost(
-    @Arg("id", ()=>Int) id: number,
+    @Arg("id", () => Int) id: number,
     @Arg("value") value: number,
-    @Ctx() {em,req} : MyContext
-  ): Promise<boolean>{
-
+    @Ctx() { em, req }: MyContext
+  ): Promise<boolean> {
     //resolve value to -1,0,1
-    (value === 0) ? value = 0 : 
-    (value > 1) ? value = 1 : value = -1;
+    value === 0 ? (value = 0) : value > 1 ? (value = 1) : (value = -1);
 
-    const user = await em.fork({}).findOne(User, {id: req.session.userid});
-    const post = await em.fork({}).findOne(Post, {id}, {populate: ["votes"]});
-    if(user && post){
-
-      const postVote = await em.fork({}).findOne(PostVote, {post, user});  //check if vote exists
-      if (postVote){
-          post.voteCount -= postVote.value;
-          postVote.value = value;
-          post.voteCount += postVote.value;
-          await em.fork({}).persistAndFlush(postVote);
-      }else{
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const post = await em
+      .fork({})
+      .findOne(Post, { id }, { populate: ["votes"] });
+    if (user && post) {
+      const postVote = await em.fork({}).findOne(PostVote, { post, user }); //check if vote exists
+      if (postVote) {
+        post.voteCount -= postVote.value;
+        postVote.value = value;
+        post.voteCount += postVote.value;
+        await em.fork({}).persistAndFlush(postVote);
+      } else {
         const newPostVote = new PostVote(user, post, value);
         post.voteCount -= newPostVote.value;
 
@@ -309,31 +380,29 @@ export class PostResolver {
         await em.fork({}).persistAndFlush(newPostVote);
       }
       await em.fork({}).persistAndFlush(post);
-      return true;    
-
-    }else{
+      return true;
+    } else {
       return false;
     }
   }
 
-
-
-@Mutation(() => Boolean)
-@UseMiddleware(isAuth)
-async savePost(
-  @Arg("id", ()=>Int) id: number,
-  @Ctx() {em,req} : MyContext
-): Promise<boolean>{
-  const user = await em.fork({}).findOne(User, {id: req.session.userid});
-  const post = await em.fork({}).findOne(Post, {id}, { populate: ["savers"]});
-  if(user && post){
-
-    user.savedPosts.add(post);
-    post.savers.add(user);
-    em.fork({}).persistAndFlush(user);
-    return true;
-  }else{
-    return false;
-  }
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async savePost(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { em, req }: MyContext
+  ): Promise<boolean> {
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const post = await em
+      .fork({})
+      .findOne(Post, { id }, { populate: ["savers"] });
+    if (user && post) {
+      user.savedPosts.add(post);
+      post.savers.add(user);
+      em.fork({}).persistAndFlush(user);
+      return true;
+    } else {
+      return false;
+    }
   }
 }
