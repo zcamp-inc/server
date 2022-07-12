@@ -120,7 +120,7 @@ export class PostResolver {
 
         if (sortBy === "recent") {
           const time_period = new Date(
-            new Date().getTime() - 1000 * 60 * 60 * 24 * 2
+            new Date().getTime() - 1000 * 60 * 60 * 24 * 10
           );
           const [posts, count] = await em
             .fork({})
