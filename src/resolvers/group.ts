@@ -31,6 +31,35 @@ export class GroupResolver {
     const topGroups = await em.fork({}).find(Group, {}, {orderBy: {members: QueryOrder.DESC}, limit: 5 });
     return topGroups; 
   }
+  
+  @Query(() => [Group])
+  @UseMiddleware(isAuth)
+  async getUserGroups(
+      @Ctx() { em, req }: MyContext
+  ): Promise<Group[]> {
+    const user = await em.fork({}).findOne(User, {id: req.session.userid}, {populate: ['subscriptions']});
+
+    if (user){
+        const groups = user.subscriptions.getItems();
+        return groups
+
+    } 
+    return [];
+  }
+
+
+  @Query(() => Number)
+  async getGroupUserCount(
+      @Arg("groupId") groupId: number,
+      @Ctx() { em }: MyContext
+  ): Promise<number> {
+
+    const group = await em.fork({}).findOne(Group, {id: groupId}, {populate: ["members"]});
+    if (group){
+       return group.members.count();
+    } 
+      return -1;
+  }
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
@@ -67,6 +96,7 @@ export class GroupResolver {
       const group = new Group(name, description);
       group.moderators.add(user);
       group.members.add(user);
+      user.subscriptions.add(group); 
       user.moderating.add(group);
       await em.fork({}).persistAndFlush(group);
       await em.fork({}).persistAndFlush(user);
@@ -118,31 +148,5 @@ export class GroupResolver {
   }
 
 
-  @Mutation(() => [Group])
-  @UseMiddleware(isAuth)
-  async getUserGroups(
-      @Ctx() { em, req }: MyContext
-  ): Promise<Group[]> {
-    const user = await em.fork({}).findOne(User, {id: req.session.userid}, {populate: ['subscriptions']});
-
-    if (user){
-        return user.subscriptions.getItems()
-    } 
-    return [];
-  }
-
-
-  @Mutation(() => [User])
-  async getGroupUsers(
-      @Arg("groupId") groupId: number,
-      @Ctx() { em }: MyContext
-  ): Promise<User[]> {
-
-    const group = await em.fork({}).findOne(Group, {id: groupId}, {populate: ["members"]});
-    if (group){
-        return group.members.getItems();
-    } 
-      return [];
-  }
 
 }
