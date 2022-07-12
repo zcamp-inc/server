@@ -45,5 +45,9 @@ export class Group {
   @ManyToMany(() => User, user => user.moderating)
   moderators = new Collection<User>(this);
 
-
+  
+  constructor(name: string, description:string){
+    this.name = name;
+    this.description = description;
+  }
 }
