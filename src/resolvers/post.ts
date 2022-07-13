@@ -31,6 +31,11 @@ export class PostResolver {
     return post.body.slice(0, 100);
   }
 
+  @FieldResolver(() => Group)
+  group(@Root() post: Post){
+    return post.group;
+  }
+
   @FieldResolver(() => UserResponse)
   async creator(
     @Root() post: Post,
@@ -88,6 +93,98 @@ export class PostResolver {
             message: "Post could not be fetched.",
           },
         ],
+      };
+    }
+  }
+  @Query(() => PaginatedPosts)
+  async groupPosts(
+    @Arg("limit") limit: number,
+    @Arg("groupId") groupId: number,
+    @Arg("cursor", { defaultValue: 0 }) cursor: number,
+    @Arg("sortBy", () => String, { nullable: true }) sortBy: string | null,
+    @Ctx() { em, req }: MyContext
+  ): Promise<PaginatedPosts> {
+    cursor = cursor === null ? 0 : cursor;
+    sortBy = sortBy === null ? "recent" : sortBy;
+
+    const group = await em.fork({}).findOne(Group, {id: groupId});
+    if (group) {
+      const maxLimit: number = 50;
+      limit = Math.min(maxLimit, limit);
+
+      if (sortBy === "recent") {
+        const time_period = new Date(
+          new Date().getTime() - 1000 * 60 * 60 * 24 * 10
+        );
+        const [posts, count] = await em
+          .fork({})
+          .findAndCount(
+            Post,
+            { createdAt: { $gt: time_period }, group: group },
+            {
+              limit: limit,
+              populate: [
+                "votes",
+                "savers",
+                "title",
+                "body",
+                "id",
+                "createdAt",
+                "updatedAt",
+                "wasEdited",
+                "voteCount",
+                "group",
+                "owner",
+                "owner.id",
+              ],
+              offset: cursor,
+              orderBy: { voteCount: QueryOrder.DESC },
+            }
+          );
+          return {
+          posts: posts,
+          hasMore: limit + cursor + 1 < count,
+          cursor: cursor + limit + 1,
+        };
+      } else {
+          // (sortBy === "recent")
+          const [posts, count] = await em
+            .fork({})
+            .findAndCount(
+              Post,
+              { group: group },
+              {
+                limit: limit,
+                populate: [
+                  "votes",
+                  "savers",
+                  "title",
+                  "body",
+                  "id",
+                  "createdAt",
+                  "updatedAt",
+                  "wasEdited",
+                  "voteCount",
+                  "group",
+                  "owner",
+                  "owner.id",
+                ],
+                offset: cursor,
+                orderBy: { createdAt: QueryOrder.DESC },
+              }
+            );
+
+          return {
+            posts: posts || [],
+            hasMore: limit + cursor + 1 < count,
+            cursor: cursor + limit + 1,
+          };
+        }
+    } else {
+      return {
+        posts: [],
+        hasMore: false,
+        cursor: -1,
       };
     }
   }
@@ -206,6 +303,7 @@ export class PostResolver {
       };
     }
   }
+
 
   @Query(() => PaginatedPosts)
   async trendingPosts(
