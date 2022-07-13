@@ -8,7 +8,7 @@ import {
     Mutation,
   } from "type-graphql";
 
-import { MyContext } from "../types";
+import { GroupResponse, MyContext } from "../types";
 import {Group} from "../entities/Group";
 import { QueryOrder } from "@mikro-orm/core";
 import { isAuth } from "../middleware/isAuth";
@@ -30,6 +30,35 @@ export class GroupResolver {
   Promise<Group[]>{
     const topGroups = await em.fork({}).find(Group, {}, {orderBy: {members: QueryOrder.DESC}, limit: 5 });
     return topGroups; 
+  }
+  
+  @Query(() => [Group])
+  @UseMiddleware(isAuth)
+  async getUserGroups(
+      @Ctx() { em, req }: MyContext
+  ): Promise<Group[]> {
+    const user = await em.fork({}).findOne(User, {id: req.session.userid}, {populate: ['subscriptions']});
+
+    if (user){
+        const groups = user.subscriptions.getItems();
+        return groups
+
+    } 
+    return [];
+  }
+
+
+  @Query(() => Number)
+  async getGroupUserCount(
+      @Arg("groupId") groupId: number,
+      @Ctx() { em }: MyContext
+  ): Promise<number> {
+
+    const group = await em.fork({}).findOne(Group, {id: groupId}, {populate: ["members"]});
+    if (group){
+       return group.members.count();
+    } 
+      return -1;
   }
 
   @Mutation(() => Boolean)
@@ -53,33 +82,71 @@ export class GroupResolver {
       return false;
   }
 
-  @Mutation(() => [Group])
+  @Mutation(() => GroupResponse)
   @UseMiddleware(isAuth)
-  async getUserGroups(
-      @Ctx() { em, req }: MyContext
-  ): Promise<Group[]> {
-    const user = await em.fork({}).findOne(User, {id: req.session.userid}, {populate: ['subscriptions']});
+  async createGroup(
+    @Arg("name") name: string,
+    @Arg("description") description: string,
+    //we can make it optional to create with logo and banner images
+    @Ctx() { em, req }: MyContext
+  ): Promise<GroupResponse> {
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
 
-      if (user){
-        console.log(user.subscriptions.getItems())
-          return user.subscriptions.getItems()
-      } 
-      return [];
+    if (user){
+      const group = new Group(name, description);
+      group.moderators.add(user);
+      group.members.add(user);
+      user.subscriptions.add(group); 
+      user.moderating.add(group);
+      await em.fork({}).persistAndFlush(group);
+      await em.fork({}).persistAndFlush(user);
+      return { group, };
+    } else {
+      return {
+        errors: [
+          {
+            field: "Error creating group.",
+            message: "User with session id could not be fetched.",
+          },
+        ],
+      };
+    }
   }
 
 
-  @Mutation(() => [User])
-  async getGroupUsers(
-      @Arg("groupId") groupId: number,
-      @Ctx() { em, req }: MyContext
-  ): Promise<User[]> {
-
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async updateGroupDetails(
+    @Arg("groupId") groupId: number,
+    @Arg("name", { nullable: true }) name: string,
+    @Arg("description", { nullable: true }) description: string,
+    @Arg("logoImgUrl", { nullable: true }) logoImgUrl: string,
+    @Arg("bannerImgUrl", { nullable: true }) bannerImgUrl: string,
+    @Ctx() { em, req }: MyContext
+  ): Promise<boolean> {
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
     const group = await em.fork({}).findOne(Group, {id: groupId});
 
-      if (group){
-          return group.members.getItems();
-      } 
-      return [];
+    if (user && group){
+      //check if moderator
+      if (group.moderators.contains(user)){
+        //alter details
+        group.name = name ? name : group.name;
+        group.description= description? description: group.description;
+        group.logoImgUrl = logoImgUrl ? logoImgUrl : group.logoImgUrl;
+        group.bannerImgUrl = bannerImgUrl ? bannerImgUrl : group.bannerImgUrl;
+
+        return true;
+      } else{
+        return false;
+      }
+    }
+    else{
+      return false;
+    }
+      
   }
+
+
 
 }
