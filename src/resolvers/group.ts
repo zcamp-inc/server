@@ -25,6 +25,28 @@ export class GroupResolver {
     return groups; 
   }
 
+  @Query(() => GroupResponse, { nullable: true })
+  async group(
+    @Arg("name") name: string,
+    @Ctx() { em, req }: MyContext
+  ): Promise<GroupResponse | undefined> {
+    try {
+      const group = await em.fork({}).findOneOrFail(Group, { name: name });
+      return{
+        group
+      };
+    } catch (err) {
+      return {
+        errors: [
+          {
+            field: "Error occured while fetching user.",
+            message: err,
+          },
+        ],
+      };
+    }
+  }
+
   @Query(() => [Group])
   async topGroups(@Ctx() {em}: MyContext) : 
   Promise<Group[]>{
