@@ -96,10 +96,11 @@ export class PostResolver {
       };
     }
   }
+
   @Query(() => PaginatedPosts)
-  async groupPosts(
+  @UseMiddleware(isAuth)
+  async userPosts(
     @Arg("limit") limit: number,
-    @Arg("groupId") groupId: number,
     @Arg("cursor", { defaultValue: 0 }) cursor: number,
     @Arg("sortBy", () => String, { nullable: true }) sortBy: string | null,
     @Ctx() { em, req }: MyContext
@@ -107,79 +108,34 @@ export class PostResolver {
     cursor = cursor === null ? 0 : cursor;
     sortBy = sortBy === null ? "recent" : sortBy;
 
-    const group = await em.fork({}).findOne(Group, {id: groupId});
-    if (group) {
+    const user = await em
+      .fork({})
+      .findOne(
+        User,
+        { id: req.session.userid},
+        { populate: ["posts"] }
+      );
+      
+    if (user) {
       const maxLimit: number = 50;
       limit = Math.min(maxLimit, limit);
 
-      if (sortBy === "recent") {
-        const time_period = new Date(
-          new Date().getTime() - 1000 * 60 * 60 * 24 * 10
-        );
-        const [posts, count] = await em
-          .fork({})
-          .findAndCount(
-            Post,
-            { createdAt: { $gt: time_period }, group: group },
-            {
-              limit: limit,
-              populate: [
-                "votes",
-                "savers",
-                "title",
-                "body",
-                "id",
-                "createdAt",
-                "updatedAt",
-                "wasEdited",
-                "voteCount",
-                "group",
-                "owner",
-                "owner.id",
-              ],
-              offset: cursor,
-              orderBy: { voteCount: QueryOrder.DESC },
-            }
-          );
-          return {
-          posts: posts,
-          hasMore: limit + cursor + 1 < count,
-          cursor: cursor + limit + 1,
-        };
-      } else {
-          // (sortBy === "recent")
-          const [posts, count] = await em
-            .fork({})
-            .findAndCount(
-              Post,
-              { group: group },
-              {
-                limit: limit,
-                populate: [
-                  "votes",
-                  "savers",
-                  "title",
-                  "body",
-                  "id",
-                  "createdAt",
-                  "updatedAt",
-                  "wasEdited",
-                  "voteCount",
-                  "group",
-                  "owner",
-                  "owner.id",
-                ],
-                offset: cursor,
-                orderBy: { createdAt: QueryOrder.DESC },
-              }
-            );
-
-          return {
-            posts: posts || [],
-            hasMore: limit + cursor + 1 < count,
-            cursor: cursor + limit + 1,
-          };
+      const endIndex = cursor + limit;
+      const posts = user.posts.getItems();
+      if(endIndex > posts.length){
+        return {
+          posts : posts.slice(cursor),
+          hasMore: false,
+          cursor: posts.length-1
         }
+      }else{
+        return{
+          posts: posts.slice(cursor, cursor+limit),
+          hasMore: false,
+          cursor: cursor+limit
+        }
+      }
+
     } else {
       return {
         posts: [],

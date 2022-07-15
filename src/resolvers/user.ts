@@ -30,6 +30,7 @@ export class UserResolver {
     return "";
   }
 
+
   @Mutation(() => UserResponse)
   async changePassword(
     @Arg("token") token: string,
@@ -148,6 +149,7 @@ export class UserResolver {
       };
     }
   }
+
 
   @Mutation(() => UserResponse)
   async registerUser(
