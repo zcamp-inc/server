@@ -320,7 +320,7 @@ export class PostResolver {
 
     if (sortBy === "best") {
       const time_period = new Date(
-        new Date().getTime() - 1000 * 60 * 60 * 24 * 2
+        new Date().getTime() - 1000 * 60 * 60 * 24 * 20
       );
       const [posts, count] = await em.fork({}).findAndCount(
         Post,
@@ -328,7 +328,20 @@ export class PostResolver {
         {
           limit: limit,
           offset: cursor,
-          populate: ["votes", "savers", "voteCount"],
+          populate: [
+            "votes",
+            "savers",
+            "title",
+            "body",
+            "id",
+            "createdAt",
+            "updatedAt",
+            "wasEdited",
+            "voteCount",
+            "group",
+            "owner",
+            "owner.id",
+          ],
           orderBy: { voteCount: QueryOrder.DESC },
         }
       );
@@ -348,7 +361,20 @@ export class PostResolver {
           {
             limit: limit,
             offset: cursor,
-            populate: ["votes", "savers", "voteCount"],
+            populate: [
+              "votes",
+              "savers",
+              "title",
+              "body",
+              "id",
+              "createdAt",
+              "updatedAt",
+              "wasEdited",
+              "voteCount",
+              "group",
+              "owner",
+              "owner.id",
+            ],
           }
         );
 
