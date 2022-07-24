@@ -454,7 +454,7 @@ export class PostResolver {
         await em.fork({}).persistAndFlush(postVote);
       } else {
         const newPostVote = new PostVote(user, post, value);
-        post.voteCount -= newPostVote.value;
+        post.voteCount += newPostVote.value;
 
         post.votes.add(newPostVote);
         await em.fork({}).persistAndFlush(newPostVote);
