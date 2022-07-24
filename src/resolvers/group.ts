@@ -26,7 +26,7 @@ export class GroupResolver {
     return groups; 
   }
 
-  @Query(() => GroupResponse, { nullable: true })
+  @Query(() => GroupResponse)
   async getGroupByName(
     @Arg("groupName") groupName: string,
     @Arg("universityName") universityName: string,
