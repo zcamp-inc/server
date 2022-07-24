@@ -124,22 +124,19 @@ export class GroupResolver {
   async createGroup(
     @Arg("name") name: string,
     @Arg("description") description: string,
-    @Arg("universityId") univeristyId: number,
     //we can make it optional to create with logo and banner images
     @Ctx() { em, req }: MyContext
   ): Promise<GroupResponse> {
-    const user = await em.fork({}).findOne(User, { id: req.session.userid });
-    const university = await em.fork({}).findOne(University, { id: univeristyId});
+    const user = await em.fork({}).findOne(User, { id: req.session.userid }, {populate: ["university"]});
 
-    if (user && university){
-      const group = new Group(name, description, university);
-      university.groups.add(group);
+    if (user ){
+      const group = new Group(name, description, user.university);
+      user.university.groups.add(group);
       group.moderators.add(user);
       group.members.add(user);
       user.subscriptions.add(group); 
       user.moderating.add(group);
       await em.fork({}).persistAndFlush(group);
-      await em.fork({}).persistAndFlush(university);
       await em.fork({}).persistAndFlush(user);
       return { group, };
     } else {
