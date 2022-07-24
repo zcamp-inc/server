@@ -13,6 +13,7 @@ import {Group} from "../entities/Group";
 import { QueryOrder } from "@mikro-orm/core";
 import { isAuth } from "../middleware/isAuth";
 import { User } from "../entities/User";
+import { University } from "../entities/University";
 
 
 @Resolver(Group)
@@ -26,15 +27,29 @@ export class GroupResolver {
   }
 
   @Query(() => GroupResponse, { nullable: true })
-  async group(
-    @Arg("name") name: string,
+  async getGroupByName(
+    @Arg("groupName") groupName: string,
+    @Arg("universityName") universityName: string,
     @Ctx() { em, req }: MyContext
-  ): Promise<GroupResponse | undefined> {
+  ): Promise<GroupResponse> {
     try {
-      const group = await em.fork({}).findOneOrFail(Group, { name: name });
-      return{
-        group
-      };
+      const university = await em.fork({}).findOneOrFail(University, { name: universityName });
+      if (university){
+        const group = await em.fork({}).findOneOrFail(Group, { name: groupName, university: university  });
+        return{
+          group
+        };
+      }else{
+        return {
+          errors: [
+            {
+              field: "Error occured while fetching university.",
+              message: `University with name ${universityName} could not be fetched`,
+            },
+          ],
+        };
+      }
+
     } catch (err) {
       return {
         errors: [
@@ -109,18 +124,22 @@ export class GroupResolver {
   async createGroup(
     @Arg("name") name: string,
     @Arg("description") description: string,
+    @Arg("universityId") univeristyId: number,
     //we can make it optional to create with logo and banner images
     @Ctx() { em, req }: MyContext
   ): Promise<GroupResponse> {
     const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const university = await em.fork({}).findOne(University, { id: univeristyId});
 
-    if (user){
-      const group = new Group(name, description);
+    if (user && university){
+      const group = new Group(name, description, university);
+      university.groups.add(group);
       group.moderators.add(user);
       group.members.add(user);
       user.subscriptions.add(group); 
       user.moderating.add(group);
       await em.fork({}).persistAndFlush(group);
+      await em.fork({}).persistAndFlush(university);
       await em.fork({}).persistAndFlush(user);
       return { group, };
     } else {

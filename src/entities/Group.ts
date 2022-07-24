@@ -1,7 +1,8 @@
-import { Collection, Entity, ManyToMany, PrimaryKey, Property, OneToMany } from "@mikro-orm/core";
+import { Collection, Entity, ManyToMany, PrimaryKey, Property, OneToMany, ManyToOne } from "@mikro-orm/core";
 import { ObjectType, Field } from "type-graphql";
 
 import { User } from "./User";
+import { University } from "./University";
 import { Post } from "./Post";
 
 @ObjectType()
@@ -42,12 +43,16 @@ export class Group {
   @OneToMany(()=> Post, post => post.group)
   posts = new Collection<Post>(this);
 
+  @ManyToOne(() => University)
+  university: University;
+
   @ManyToMany(() => User, user => user.moderating)
   moderators = new Collection<User>(this);
 
   
-  constructor(name: string, description:string){
+  constructor(name: string, description:string, university:University){
     this.name = name;
     this.description = description;
+    this.university = university;
   }
 }

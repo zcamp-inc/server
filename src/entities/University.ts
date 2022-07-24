@@ -1,5 +1,6 @@
 import { Collection, Entity, PrimaryKey, Property, OneToMany } from "@mikro-orm/core";
 import { User } from "./User";
+import { Group } from "./Group";
 import { ObjectType, Field } from "type-graphql";
 
 
@@ -37,6 +38,9 @@ export class University {
 
   @OneToMany(() => User, user => user.university)
   students = new Collection<User>(this);
+
+  @OneToMany(() => Group, group=> group.university)
+  groups = new Collection<Group>(this);
 
   constructor(name : string){
     this.name = name;
