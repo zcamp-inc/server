@@ -6,9 +6,11 @@ import {
     Arg,
     UseMiddleware,
     Mutation,
+    FieldResolver,
+    Root,
   } from "type-graphql";
 
-import { GroupResponse, MyContext } from "../types";
+import { GroupResponse, MyContext, UniversityResponse } from "../types";
 import {Group} from "../entities/Group";
 import { QueryOrder } from "@mikro-orm/core";
 import { isAuth } from "../middleware/isAuth";
@@ -18,6 +20,43 @@ import { University } from "../entities/University";
 
 @Resolver(Group)
 export class GroupResolver {
+
+  @FieldResolver(() => UniversityResponse)
+  async university(@Root() group: Group, @Ctx() { em, req }: MyContext)
+  : Promise<UniversityResponse> {
+    try{
+    const university = await em.fork({}).findOneOrFail(University, {id: group.university.id}, 
+      {populate: ["name", "logoImgUrl", "bannerImgUrl", "groups", "description", ]});
+
+      if (university){
+        return {
+          university,
+        }
+      } else{
+        return {
+          errors: [
+            {
+              field: "Error occured while fetching university.",
+              message: `University with id ${group.university.id} could not be fetched`,
+            },
+          ],
+        };
+
+      }
+    } catch (err){
+      return {
+          errors: [
+            {
+              field: "Error occured while fetching university.",
+              message: `University with id ${group.university.id} could not be fetched`,
+            },
+          ],
+      };
+
+    }
+
+    
+  }
 
   @Query(() => [Group])
   async getGroups(@Ctx() {em}: MyContext) : 
@@ -84,6 +123,21 @@ export class GroupResolver {
     return [];
   }
 
+
+  @Query(() => [Group])
+  async getUniversityGroups(
+      @Arg("universityId") universityId: number,
+      @Ctx() { em, req }: MyContext
+  ): Promise<Group[]> {
+    const university = await em.fork({}).findOne(University, {id: universityId}, {populate: ['groups']});
+
+    if (university){
+        const groups = university.groups.getItems();
+        return groups
+
+    } 
+    return [];
+  }
 
   @Query(() => Number)
   async getGroupUserCount(

@@ -23,6 +23,7 @@ export class UniversityResolver {
     return "Universities seeded" 
   }
 
+
   @Query(() => [University])
   async getUniversities(@Ctx() {em}: MyContext) : 
   Promise<University[]>{

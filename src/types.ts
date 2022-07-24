@@ -6,6 +6,7 @@ import { ObjectType, Field } from 'type-graphql';
 import { User } from './entities/User';
 import { Post } from './entities/Post';
 import { Group } from './entities/Group';
+import { University } from './entities/University';
 import { Comment } from './entities/Comment';
 
 export type MyContext = {
@@ -39,6 +40,13 @@ export class PostResponse{
     post?: Post;
 }
 
+@ObjectType()
+export class UniversityResponse{
+    @Field(()=> [FieldError], {nullable: true})
+    errors?: FieldError[];
+    @Field(()=>University, {nullable: true})
+    university?: University;
+}
 @ObjectType()
 export class GroupResponse{
     @Field(()=> [FieldError], {nullable: true})
