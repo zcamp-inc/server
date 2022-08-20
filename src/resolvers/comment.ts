@@ -28,7 +28,7 @@ export class CommentResolver {
     return comment.body.slice(0,100);
   }
 
-  @FieldResolver(() => User)
+  @FieldResolver(() => UserResponse)
   async creator(
     @Root() comment: Comment, 
     @Ctx() {em} : MyContext
@@ -93,10 +93,10 @@ export class CommentResolver {
       {populate: [
         "comments",
         "comments.body",
-        "comments.children",
+        // "comments.children",
         "comments.createdAt",
-        "comments.owner",
-        "comments.owner.id",
+        // "comments.owner",
+        // "comments.owner.id",
         "comments.voteCount",
         "comments.wasEdited",
         "comments.isDisabled",
