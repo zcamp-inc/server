@@ -86,7 +86,7 @@ export class CommentResolver {
 
   @Query(() => CommentsResponse, { nullable: true })
   async getPostComments(
-    @Arg("postId") postId: number,
+    @Arg("postId", () => Int) postId: number,
     @Ctx() {em}: MyContext
 ): Promise<CommentsResponse> {
     const post = await em.fork({}).findOne(Post, {id: postId}, {populate: ["comments"]});

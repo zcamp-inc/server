@@ -373,6 +373,7 @@ export class PostResolver {
     if (user && group) {
       // TODO: you have to be a uni member to post in a uni group
       const post = new Post(user, title, group, body);
+      post.comments.init();
       await em.fork({}).persistAndFlush(post);
       return { post };
     } else {
