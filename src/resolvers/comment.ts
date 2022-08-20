@@ -89,10 +89,23 @@ export class CommentResolver {
     @Arg("postId", () => Int) postId: number,
     @Ctx() {em}: MyContext
 ): Promise<CommentsResponse> {
-    const post = await em.fork({}).findOne(Post, {id: postId}, {populate: ["comments"]});
+    const post = await em.fork({}).findOne(Post, {id: postId}, 
+      {populate: [
+        "comments",
+        "comments.body",
+        "comments.children",
+        "comments.createdAt",
+        "comments.owner",
+        "comments.owner.id",
+        "comments.voteCount",
+        "comments.wasEdited",
+        "comments.isDisabled",
+        "comments.updatedAt"
+      ]});
     if (post){
-        let comments = post.comments.getItems();
-        return {comments, }
+        const comments = post.comments.getItems();
+        return {comments,}
+        
     } else{
         return {errors:[{
             field: "Error in fetching post.",
