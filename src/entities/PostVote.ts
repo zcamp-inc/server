@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, ManyToOne } from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property} from "@mikro-orm/core";
 import { User } from "./User";
 import { Post } from "./Post";
 
@@ -14,17 +14,19 @@ export class PostVote {
   @Property()
   value: number;
 
-  @ManyToOne(() => Post, {onDelete: "CASCADE"})
-  post: Post;
+  // @ManyToOne(() => Post, {onDelete: "CASCADE"})
+  // post: Post;
 
-  @ManyToOne(() => User, {onDelete: "CASCADE"})
-  user: User;
+  // @ManyToOne(() => User, {onDelete: "CASCADE"})
+  // user: User;
 
 
   constructor(user: User, post: Post, value: number){
-    this.user = user;
-    this.post = post;
+    // this.user = user;
+    // this.post = post;
     this.value = value;
+    this.userId = user.id;
+    this.postId = post.id;
   }
 
 

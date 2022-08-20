@@ -4,8 +4,8 @@ import { ObjectType, Field } from "type-graphql";
 import { Group } from "./Group";
 import { Post } from "./Post";
 import { Comment } from "./Comment";
-import { PostVote } from "./PostVote";
-import { CommentVote } from "./CommentVote";
+// import { PostVote } from "./PostVote";
+// import { CommentVote } from "./CommentVote";
 import { University } from "./University";
 
 
@@ -51,11 +51,11 @@ export class User {
   @OneToMany(()=> Comment, comment => comment.owner)
   comments = new Collection<Comment>(this);
 
-  @OneToMany(() => PostVote, postVote => postVote.user)
-  postVotes = new Collection<PostVote>(this);
+  // @OneToMany(() => PostVote, postVote => postVote.user)
+  // postVotes = new Collection<PostVote>(this);
 
-  @OneToMany(() => CommentVote, commentVote => commentVote.user)
-  commentVotes = new Collection<PostVote>(this);
+  // @OneToMany(() => CommentVote, commentVote => commentVote.user)
+  // commentVotes = new Collection<PostVote>(this);
 
   @ManyToOne(() => University)
   university : University;

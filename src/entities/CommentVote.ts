@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, ManyToOne } from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 import { User } from "./User";
 import { Comment } from "./Comment";
 
@@ -14,17 +14,19 @@ export class CommentVote {
   @Property()
   value: number;
 
-  @ManyToOne(() => Comment, {onDelete: "CASCADE"})
-  comment: Comment;
+  // @ManyToOne(() => Comment, {onDelete: "CASCADE"})
+  // comment: Comment;
 
-  @ManyToOne(() => User, {onDelete: "CASCADE"})
-  user: User;
+  // @ManyToOne(() => User, {onDelete: "CASCADE"})
+  // user: User;
 
 
   constructor(user: User, comment: Comment, value: number){
-    this.user = user;
-    this.comment = comment;
+    // this.user = user;
+    // this.comment = comment;
     this.value = value;
+    this.userId = user.id;
+    this.commentId = comment.id;
   }
 
 }

@@ -21,10 +21,6 @@ import { QueryOrder } from "@mikro-orm/core";
 
 @Resolver(Post)
 export class PostResolver {
-  @FieldResolver(() => Int)
-  voteCount(@Root() post: Post) {
-    return post.votes.count();
-  }
 
   @FieldResolver(() => String)
   bodySnippet(@Root() post: Post) {
@@ -68,7 +64,7 @@ export class PostResolver {
         { id: id },
         {
           populate: [
-            "votes",
+            // "votes",
             "savers",
             "title",
             "body",
@@ -183,7 +179,7 @@ export class PostResolver {
               {
                 limit: limit,
                 populate: [
-                  "votes",
+                  // "votes",
                   "savers",
                   "title",
                   "body",
@@ -219,7 +215,7 @@ export class PostResolver {
               {
                 limit: limit,
                 populate: [
-                  "votes",
+                  // "votes",
                   "savers",
                   "title",
                   "body",
@@ -285,7 +281,7 @@ export class PostResolver {
           limit: limit,
           offset: cursor,
           populate: [
-            "votes",
+            // "votes",
             "savers",
             "title",
             "body",
@@ -318,7 +314,7 @@ export class PostResolver {
             limit: limit,
             offset: cursor,
             populate: [
-              "votes",
+              // "votes",
               "savers",
               "title",
               "body",
@@ -439,14 +435,15 @@ export class PostResolver {
     @Ctx() { em, req }: MyContext
   ): Promise<boolean> {
     //resolve value to -1,0,1
-    value === 0 ? (value = 0) : value > 1 ? (value = 1) : (value = -1);
+    value === 0 ? (value = 0) : value >= 1 ? (value = 1) : (value = -1);
 
     const user = await em.fork({}).findOne(User, { id: req.session.userid });
     const post = await em
       .fork({})
-      .findOne(Post, { id }, { populate: ["votes"] });
+      .findOne(Post, { id }, { populate: ["voteCount"] });
+  
     if (user && post) {
-      const postVote = await em.fork({}).findOne(PostVote, { post, user }); //check if vote exists
+      const postVote = await em.fork({}).findOne(PostVote, { postId: post.id, userId: user.id }); //check if vote exists
       if (postVote) {
         post.voteCount -= postVote.value;
         postVote.value = value;
@@ -456,7 +453,7 @@ export class PostResolver {
         const newPostVote = new PostVote(user, post, value);
         post.voteCount += newPostVote.value;
 
-        post.votes.add(newPostVote);
+        // post.votes.add(newPostVote);
         await em.fork({}).persistAndFlush(newPostVote);
       }
       await em.fork({}).persistAndFlush(post);

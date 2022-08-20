@@ -22,10 +22,6 @@ import { UserResponse, PostResponse, CommentResponse } from "../types";
 @Resolver(Comment)
 export class CommentResolver {
 
-  @FieldResolver(() => Int)
-  voteCount(@Root() comment: Comment){
-    return comment.votes.count();
-  }
 
   @FieldResolver(() => String)
   bodySnippet(@Root() comment: Comment){
@@ -185,20 +181,23 @@ export class CommentResolver {
   ): Promise<boolean>{
 
     //resolve value to -1,0,1
-    (value === 0) ? value = 0 : 
-    (value > 1) ? value = 1 : value = -1;
+    (value === 0) ? value = 0 : (value >= 1) ? value = 1 : value = -1;
 
     const user = await em.fork({}).findOne(User, {id: req.session.userid});
     const comment = await em.fork({}).findOne(Comment, {id});
     if(user && comment){
-      const commentVote = await em.fork({}).findOne(CommentVote, {comment, user});  //check if vote exists
+      const commentVote = await em.fork({}).findOne(CommentVote, {commentId: comment.id, userId: user.id});  //check if vote exists
       if (commentVote){
+          comment.voteCount -= commentVote.value;
           commentVote.value = value;
+          comment.voteCount += commentVote.value;
           await em.fork({}).persistAndFlush(commentVote);
       }else{
         const newCommentVote = new CommentVote(user, comment, value);
+        comment.voteCount += newCommentVote.value;
         await em.fork({}).persistAndFlush(newCommentVote);
       }
+      await em.fork({}).persistAndFlush(comment);
       return true;    
 
     }else{

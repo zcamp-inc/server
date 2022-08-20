@@ -1,7 +1,7 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection } from "@mikro-orm/core";
 import { ObjectType, Field } from "type-graphql";
 
-import { CommentVote } from "./CommentVote";
+// import { CommentVote } from "./CommentVote";
 import { Post } from "./Post";
 import { User } from "./User";
 
@@ -33,6 +33,9 @@ export class Comment {
   @Property()
   wasEdited: boolean = false;
 
+  @Field()
+  @Property()
+  voteCount: number = 0;
 
   @ManyToOne(() => Post, {nullable: true})
   post: Post;
@@ -47,8 +50,8 @@ export class Comment {
   @ManyToOne(() => User)
   owner: User;
 
-  @OneToMany(() => CommentVote, commentVote => commentVote.comment)
-  votes = new Collection<CommentVote>(this);
+  // @OneToMany(() => CommentVote, commentVote => commentVote.comment)
+  // votes = new Collection<CommentVote>(this);
 
   constructor(owner: User, body: string, post:Post, parentComment: Comment | null ){
     this.owner = owner;
