@@ -37,7 +37,7 @@ export class Comment {
   @Property()
   voteCount: number = 0;
 
-  @ManyToOne(() => Post, {nullable: true})
+  @ManyToOne(() => Post)
   post: Post;
 
   // if parentComment is null then parent is post

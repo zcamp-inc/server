@@ -59,10 +59,17 @@ export class GroupResponse{
 export class CommentResponse{
     @Field(()=> [FieldError], {nullable: true})
     errors?: FieldError[];
-    @Field(()=>Post, {nullable: true})
+    @Field(()=>Comment, {nullable: true})
     comment?: Comment;
 }
 
+@ObjectType()
+export class CommentsResponse{
+    @Field(()=> [FieldError], {nullable: true})
+    errors?: FieldError[];
+    @Field(()=>Comment, {nullable: true})
+    comments?: Comment[];
+}
 
 @ObjectType()
 export class PaginatedPosts {

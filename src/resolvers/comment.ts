@@ -17,7 +17,7 @@ import { Comment } from "../entities/Comment";
 import { isAuth } from "../middleware/isAuth";
 import { User } from "../entities/User";
 import { CommentVote } from "../entities/CommentVote";
-import { UserResponse, PostResponse, CommentResponse } from "../types";
+import { UserResponse, PostResponse, CommentResponse, CommentsResponse } from "../types";
 
 @Resolver(Comment)
 export class CommentResolver {
@@ -84,6 +84,22 @@ export class CommentResolver {
   }
 
 
+  @Query(() => CommentsResponse, { nullable: true })
+  async getPostComments(
+    @Arg("postId") postId: number,
+    @Ctx() {em}: MyContext
+): Promise<CommentsResponse> {
+    const post = await em.fork({}).findOne(Post, {id: postId}, {populate: ["comments"]});
+    if (post){
+        let comments = post.comments.getItems();
+        return {comments, }
+    } else{
+        return {errors:[{
+            field: "Error in fetching post.",
+            message: "Post could not be fetched."
+        }]}
+    }
+  }
   @Mutation(() => CommentResponse)
   @UseMiddleware(isAuth)
   async createComment(
@@ -105,7 +121,9 @@ export class CommentResolver {
           }
 
           const comment =  new Comment(user, body, post, null);
+          post.comments.add(comment);
           await em.fork({}).persistAndFlush(comment);
+          await em.fork({}).persistAndFlush(post);
           return {comment, };
 
       } else{

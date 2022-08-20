@@ -93,6 +93,7 @@ export class PostResolver {
     }
   }
 
+
   @Query(() => PaginatedPosts)
   @UseMiddleware(isAuth)
   async userPosts(
