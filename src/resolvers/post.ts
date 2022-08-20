@@ -141,6 +141,26 @@ export class PostResolver {
       };
     }
   }
+  @Query(() => Number)
+  @UseMiddleware(isAuth)
+  async getPostVoteValue(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { em, req }: MyContext
+):Promise<number>{
+
+    //resolve value to -1,0,1
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const post = await em.fork({}).findOne(Post, { id });
+    
+    if (user && post) {
+      let postVote = await em.fork({}).findOne(PostVote, { postId: post.id, userId: user.id }, {populate:["value"]}); //check if vote exists
+      if (postVote){
+        return postVote.value
+      }
+    }
+    return 0;  
+  }
+
 
   @Query(() => PaginatedPosts)
   @UseMiddleware(isAuth)
