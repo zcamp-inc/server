@@ -67,7 +67,7 @@ export class CommentResponse{
 export class CommentsResponse{
     @Field(()=> [FieldError], {nullable: true})
     errors?: FieldError[];
-    @Field(()=>Comment, {nullable: true})
+    @Field(()=>[Comment], {nullable: true})
     comments?: Comment[];
 }
 
