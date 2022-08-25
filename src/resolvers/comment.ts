@@ -11,7 +11,7 @@ import {
     Int
   } from "type-graphql";
 
-import { MyContext } from "../types";
+import { MyContext, VoteResponse } from "../types";
 import { Post } from "../entities/Post";
 import { Comment } from "../entities/Comment";
 import { isAuth } from "../middleware/isAuth";
@@ -84,7 +84,7 @@ export class CommentResolver {
   }
 
 
-  @Query(() => CommentsResponse, { nullable: true })
+  @Query(() => CommentsResponse)
   async getPostComments(
     @Arg("postId", () => Int) postId: number,
     @Ctx() {em}: MyContext
@@ -203,13 +203,13 @@ export class CommentResolver {
   };
 
 
-  @Mutation(() => Boolean)
+  @Mutation(() => VoteResponse)
   @UseMiddleware(isAuth)
   async voteComment(
     @Arg("id", ()=>Int) id: number,
     @Arg("value") value: number,
     @Ctx() {em,req} : MyContext
-  ): Promise<boolean>{
+  ): Promise<VoteResponse>{
 
     //resolve value to -1,0,1
     (value === 0) ? value = 0 : (value >= 1) ? value = 1 : value = -1;
@@ -229,12 +229,48 @@ export class CommentResolver {
         await em.fork({}).persistAndFlush(newCommentVote);
       }
       await em.fork({}).persistAndFlush(comment);
-      return true;    
+      return {
+        success: true,
+        voteCount: comment.voteCount
+      };    
 
     }else{
-      return false;
+      return {
+        success : false
+      };
     }
   }
 
+  @Mutation(() => VoteResponse)
+  @UseMiddleware(isAuth)
+  async unvoteComment(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { em, req }: MyContext
+  ): Promise<VoteResponse> {
+
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const comment = await em.fork({}).findOne(Comment, {id});
+  
+    if (user && comment) {
+      const commentVote = await em.fork({}).findOne(CommentVote, { commentId: comment.id, userId: user.id }); //check if vote exists
+      if (commentVote) {
+        comment.voteCount -= commentVote.value;
+        await em.fork({}).nativeDelete(CommentVote, {commentId: id, userId: user.id})
+        await em.fork({}).persistAndFlush(comment);
+      } else {
+        return {
+          success: true, // Nothing executed, nothing failed
+        }
+      }
+      return {
+        success: true, //actually executed something
+        voteCount: comment.voteCount
+      };
+    } else {
+      return {
+        success: false
+      };
+    }
+  }
 }
 
