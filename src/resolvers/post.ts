@@ -10,7 +10,7 @@ import {
   Int,
 } from "type-graphql";
 
-import { MyContext } from "../types";
+import { MyContext, VoteResponse } from "../types";
 import { Post } from "../entities/Post";
 import { isAuth } from "../middleware/isAuth";
 import { User } from "../entities/User";
@@ -448,13 +448,13 @@ export class PostResolver {
     return false;
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => VoteResponse)
   @UseMiddleware(isAuth)
   async votePost(
     @Arg("id", () => Int) id: number,
     @Arg("value") value: number,
     @Ctx() { em, req }: MyContext
-  ): Promise<boolean> {
+  ): Promise<VoteResponse> {
     //resolve value to -1,0,1
     value === 0 ? (value = 0) : value >= 1 ? (value = 1) : (value = -1);
 
@@ -478,11 +478,52 @@ export class PostResolver {
         await em.fork({}).persistAndFlush(newPostVote);
       }
       await em.fork({}).persistAndFlush(post);
-      return true;
+      return {
+        success: true,
+        voteCount: post.voteCount
+      };
     } else {
-      return false;
+      return {
+        success: false
+      };
     }
   }
+
+  @Mutation(() => VoteResponse)
+  @UseMiddleware(isAuth)
+  async unvotePost(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { em, req }: MyContext
+  ): Promise<VoteResponse> {
+
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const post = await em
+      .fork({})
+      .findOne(Post, { id }, { populate: ["voteCount"] });
+  
+    if (user && post) {
+      const postVote = await em.fork({}).findOne(PostVote, { postId: post.id, userId: user.id }); //check if vote exists
+      if (postVote) {
+        post.voteCount -= postVote.value;
+
+        await em.fork({}).nativeDelete(PostVote, {postId: id, userId: user.id})
+        await em.fork({}).persistAndFlush(post);
+      } else {
+        return {
+          success: true, // Nothing executed, nothing failed
+        }
+      }
+      return {
+        success: true, //actually executed something
+        voteCount: post.voteCount
+      };
+    } else {
+      return {
+        success: false
+      };
+    }
+  }
+
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)

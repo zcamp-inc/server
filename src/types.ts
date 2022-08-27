@@ -72,6 +72,14 @@ export class CommentsResponse{
 }
 
 @ObjectType()
+export class VoteResponse{
+    @Field(()=> Boolean)
+    success: Boolean;
+    @Field(()=> Number, {nullable: true})
+    voteCount?: Number;
+}
+
+@ObjectType()
 export class PaginatedPosts {
   @Field(() => [Post], {nullable: true})
   posts?: Post[];

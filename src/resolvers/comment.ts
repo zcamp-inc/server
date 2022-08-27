@@ -10,7 +10,7 @@ import {
   Int,
 } from "type-graphql";
 
-import { MyContext } from "../types";
+import { MyContext, VoteResponse } from "../types";
 import { Post } from "../entities/Post";
 import { Comment } from "../entities/Comment";
 import { isAuth } from "../middleware/isAuth";
@@ -108,7 +108,12 @@ export class CommentResolver {
     }
   }
 
+<<<<<<< HEAD
   @Query(() => CommentsResponse, { nullable: true })
+=======
+
+  @Query(() => CommentsResponse)
+>>>>>>> b32e1e5177cf8eb89e7d89288bc72ad093c561cb
   async getPostComments(
     @Arg("postId", () => Int) postId: number,
     @Ctx() { em }: MyContext
@@ -239,13 +244,19 @@ export class CommentResolver {
     return false;
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => VoteResponse)
   @UseMiddleware(isAuth)
   async voteComment(
     @Arg("id", () => Int) id: number,
     @Arg("value") value: number,
+<<<<<<< HEAD
     @Ctx() { em, req }: MyContext
   ): Promise<boolean> {
+=======
+    @Ctx() {em,req} : MyContext
+  ): Promise<VoteResponse>{
+
+>>>>>>> b32e1e5177cf8eb89e7d89288bc72ad093c561cb
     //resolve value to -1,0,1
     value === 0 ? (value = 0) : value >= 1 ? (value = 1) : (value = -1);
 
@@ -266,9 +277,55 @@ export class CommentResolver {
         await em.fork({}).persistAndFlush(newCommentVote);
       }
       await em.fork({}).persistAndFlush(comment);
+<<<<<<< HEAD
       return true;
     } else {
       return false;
     }
   }
+=======
+      return {
+        success: true,
+        voteCount: comment.voteCount
+      };    
+
+    }else{
+      return {
+        success : false
+      };
+    }
+  }
+
+  @Mutation(() => VoteResponse)
+  @UseMiddleware(isAuth)
+  async unvoteComment(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { em, req }: MyContext
+  ): Promise<VoteResponse> {
+
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const comment = await em.fork({}).findOne(Comment, {id});
+  
+    if (user && comment) {
+      const commentVote = await em.fork({}).findOne(CommentVote, { commentId: comment.id, userId: user.id }); //check if vote exists
+      if (commentVote) {
+        comment.voteCount -= commentVote.value;
+        await em.fork({}).nativeDelete(CommentVote, {commentId: id, userId: user.id})
+        await em.fork({}).persistAndFlush(comment);
+      } else {
+        return {
+          success: true, // Nothing executed, nothing failed
+        }
+      }
+      return {
+        success: true, //actually executed something
+        voteCount: comment.voteCount
+      };
+    } else {
+      return {
+        success: false
+      };
+    }
+  }
+>>>>>>> b32e1e5177cf8eb89e7d89288bc72ad093c561cb
 }
