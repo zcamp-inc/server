@@ -7,6 +7,7 @@ import {
   FieldResolver,
   Root,
 } from "type-graphql";
+import { QueryOrder } from "@mikro-orm/core";
 
 import { MyContext } from "../types";
 import { User } from "../entities/User";
@@ -303,4 +304,12 @@ export class UserResolver {
       })
     );
   }
+
+  @Query(() => [User])
+  async getUsers(@Ctx() {em}: MyContext) : 
+  Promise<User[]>{
+    const user= await em.fork({}).find(User, {}, {orderBy: {username: QueryOrder.DESC} });
+    return user;
+  }
+
 }

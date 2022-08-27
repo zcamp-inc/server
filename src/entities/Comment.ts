@@ -22,7 +22,7 @@ export class Comment {
   updatedAt: Date = new Date();
 
   @Field(() => String)
-  @Property({length:3000})
+  @Property({length:30000})
   body: string;
 
   @Field()
