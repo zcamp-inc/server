@@ -427,19 +427,19 @@ export class PostResolver {
     @Ctx() { em, req }: MyContext
   ): Promise<boolean> {
     let isAuth = false;
-    const post = await em.fork({}).findOne(Post, { id });
+    const post = await em.fork({}).findOne(Post, { id }, { populate: ["group"]});
     if (post) {
       const group = post.group;
       // check if user is creator or moderator
-      if (post.owner.id === req.session.userid) {
-        isAuth = true;
-      }
       for (const moderator of group.moderators) {
         if (moderator.id === req.session.userid) {
           isAuth = true;
         }
       }
-
+      if (post.owner.id === req.session.userid) {
+        isAuth = true;
+      }
+      
       if (isAuth) {
         await em.fork({}).nativeDelete(Post, { id });
         return true;

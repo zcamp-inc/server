@@ -239,18 +239,18 @@ export class CommentResolver {
     let isAuth = false;
     const comment = await em.fork({}).findOne(Comment, { id });
     if (comment) {
-      // const group = post.group;
+      const group = comment.post.group;
 
       // check if user is creator or moderator
+      for (const moderator of group.moderators) {
+        if (moderator.id === req.session.userid) {
+          isAuth = true;
+        }
+      }
       if (comment.owner.id === req.session.userid) {
         isAuth = true;
       }
-      // for (const moderator of group.moderators) {
-      //   if (moderator.id === req.session.userid) {
-      //     isAuth = true;
-      //   }
-      // }
-
+      
       if (isAuth) {
         await em.fork({}).nativeDelete(Comment, { id });
         return true;
