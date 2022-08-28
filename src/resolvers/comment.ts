@@ -70,6 +70,26 @@ export class CommentResolver {
     }
   }
 
+  @Query(() => Number)
+  @UseMiddleware(isAuth)
+  async getCommentVoteValue(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { em, req }: MyContext
+):Promise<number>{
+
+    //resolve value to -1,0,1
+    const user = await em.fork({}).findOne(User, { id: req.session.userid });
+    const comment = await em.fork({}).findOne(Comment, { id });
+    
+    if (user && comment) {
+      let commentVote = await em.fork({}).findOne(CommentVote, { commentId: comment.id, userId: user.id }, {populate:["value"]}); //check if vote exists
+      if (commentVote){
+        return commentVote.value
+      }
+    }
+    return 0;  
+  }
+
   @Query(() => CommentResponse, { nullable: true })
   async getComment(
     @Arg("id") id: number,
@@ -108,12 +128,7 @@ export class CommentResolver {
     }
   }
 
-<<<<<<< HEAD
-  @Query(() => CommentsResponse, { nullable: true })
-=======
-
   @Query(() => CommentsResponse)
->>>>>>> b32e1e5177cf8eb89e7d89288bc72ad093c561cb
   async getPostComments(
     @Arg("postId", () => Int) postId: number,
     @Ctx() { em }: MyContext
@@ -249,14 +264,9 @@ export class CommentResolver {
   async voteComment(
     @Arg("id", () => Int) id: number,
     @Arg("value") value: number,
-<<<<<<< HEAD
-    @Ctx() { em, req }: MyContext
-  ): Promise<boolean> {
-=======
     @Ctx() {em,req} : MyContext
   ): Promise<VoteResponse>{
 
->>>>>>> b32e1e5177cf8eb89e7d89288bc72ad093c561cb
     //resolve value to -1,0,1
     value === 0 ? (value = 0) : value >= 1 ? (value = 1) : (value = -1);
 
@@ -277,13 +287,6 @@ export class CommentResolver {
         await em.fork({}).persistAndFlush(newCommentVote);
       }
       await em.fork({}).persistAndFlush(comment);
-<<<<<<< HEAD
-      return true;
-    } else {
-      return false;
-    }
-  }
-=======
       return {
         success: true,
         voteCount: comment.voteCount
@@ -327,5 +330,5 @@ export class CommentResolver {
       };
     }
   }
->>>>>>> b32e1e5177cf8eb89e7d89288bc72ad093c561cb
+
 }
