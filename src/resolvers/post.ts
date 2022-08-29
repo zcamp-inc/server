@@ -110,7 +110,7 @@ export class PostResolver {
       .findOne(
         User,
         { id: req.session.userid},
-        { populate: ["posts"] }
+        { populate: ["posts", "posts.group"] }
       );
       
     if (user) {
